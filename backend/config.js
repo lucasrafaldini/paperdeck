@@ -1,11 +1,22 @@
 // Configuração local do Dashboard (widgets ativos, notificações, etc.)
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
-const CONFIG_FILE = path.join(__dirname, '..', 'out', 'dashboard-config.json');
+function getDataDir() {
+  if (process.env.DASHBOARD_DATA_DIR) return process.env.DASHBOARD_DATA_DIR;
+  if (/app\.asar/.test(__dirname)) {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'com.alexi.kindle-dashboard');
+  }
+  return path.join(__dirname, '..', 'out');
+}
+
+function getConfigFile() {
+  return path.join(getDataDir(), 'dashboard-config.json');
+}
 
 const DEFAULT_CONFIG = {
-  activeWidgets: ['claude', 'omnirouter'],
+  activeWidgets: ['claude', 'antigravity', 'omnirouter'],
   availableWidgets: [
     { id: 'claude', name: 'Claude' },
     { id: 'omnirouter', name: 'Omni Router' },
@@ -18,8 +29,9 @@ const DEFAULT_CONFIG = {
 
 function readConfig() {
   try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    const file = getConfigFile();
+    if (fs.existsSync(file)) {
+      const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
@@ -33,8 +45,9 @@ function readConfig() {
 function writeConfig(patch) {
   const current = readConfig();
   const next = { ...current, ...patch, availableWidgets: DEFAULT_CONFIG.availableWidgets };
-  fs.mkdirSync(path.dirname(CONFIG_FILE), { recursive: true });
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2), 'utf8');
+  const file = getConfigFile();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(next, null, 2), 'utf8');
   return next;
 }
 

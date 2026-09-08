@@ -8,6 +8,7 @@
 
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const collectors = require('./collectors');
 const preflight = require('./preflight');
@@ -16,18 +17,27 @@ const PORT = parseInt(process.env.PORT || '8787', 10);
 const LOCALES_DIR = path.resolve(__dirname, '..', 'locales');
 const configMgr = require('./config');
 
-const KINDLE_STATUS_FILE = path.join(__dirname, '..', 'out', 'kindle-status.json');
+function getKindleStatusFile() {
+  if (process.env.DASHBOARD_DATA_DIR) return path.join(process.env.DASHBOARD_DATA_DIR, 'kindle-status.json');
+  if (/app\.asar/.test(__dirname)) {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'com.alexi.kindle-dashboard', 'kindle-status.json');
+  }
+  return path.join(__dirname, '..', 'out', 'kindle-status.json');
+}
+
 let kindleStatus = { battery: null, isCharging: false, lastSeen: null, clientIp: null };
 try {
-  if (fs.existsSync(KINDLE_STATUS_FILE)) {
-    kindleStatus = { ...kindleStatus, ...JSON.parse(fs.readFileSync(KINDLE_STATUS_FILE, 'utf8')) };
+  const statusFile = getKindleStatusFile();
+  if (fs.existsSync(statusFile)) {
+    kindleStatus = { ...kindleStatus, ...JSON.parse(fs.readFileSync(statusFile, 'utf8')) };
   }
 } catch {}
 
 function saveKindleStatus() {
   try {
-    fs.mkdirSync(path.dirname(KINDLE_STATUS_FILE), { recursive: true });
-    fs.writeFileSync(KINDLE_STATUS_FILE, JSON.stringify(kindleStatus), 'utf8');
+    const statusFile = getKindleStatusFile();
+    fs.mkdirSync(path.dirname(statusFile), { recursive: true });
+    fs.writeFileSync(statusFile, JSON.stringify(kindleStatus), 'utf8');
   } catch {}
 }
 

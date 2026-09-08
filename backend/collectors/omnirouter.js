@@ -2,7 +2,7 @@
 // Autentica com INITIAL_PASSWORD=admin para obter o cookie auth_token e consulta /api/usage/analytics.
 
 const BASE_URL = process.env.OMNIROUTER_URL || 'http://localhost:20128';
-const PASSWORD = process.env.OMNIROUTER_PASSWORD || '';
+const PASSWORD = process.env.OMNIROUTER_PASSWORD || 'admin';
 const MIN_INTERVAL = 30000; // 30 segundos de cache
 const REQUEST_TIMEOUT_MS = 6000;
 
