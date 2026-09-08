@@ -11,7 +11,7 @@ IMG=/mnt/us/dash.png
 INTERVAL="${INTERVAL:-45}"     # segundos entre atualizações
 FULL_EVERY="${FULL_EVERY:-20}" # full-refresh (flash anti-ghosting) a cada N ciclos
 WIFI_RETRY_EVERY="${WIFI_RETRY_EVERY:-3}" # tenta recuperar WiFi após N falhas seguidas
-MAX_FAILURES="${MAX_FAILURES:-6}" # para o script após N falhas consecutivas (0 = sem limite)
+MAX_FAILURES="${MAX_FAILURES:-0}" # para o script após N falhas consecutivas (0 = sem limite, roda para sempre)
 STOP=/mnt/us/dash-loop.stop
 PIDFILE=/mnt/us/dash-loop.pid
 if [ -x /mnt/us/libkh/bin/fbink ]; then
@@ -25,7 +25,7 @@ fi
 case "$INTERVAL" in ''|*[!0-9]*) INTERVAL=45;; esac
 case "$FULL_EVERY" in ''|*[!0-9]*|0) FULL_EVERY=20;; esac
 case "$WIFI_RETRY_EVERY" in ''|*[!0-9]*|0) WIFI_RETRY_EVERY=3;; esac
-case "$MAX_FAILURES" in ''|*[!0-9]*) MAX_FAILURES=6;; esac
+case "$MAX_FAILURES" in ''|*[!0-9]*) MAX_FAILURES=0;; esac
 if [ -z "$PC" ]; then
   echo "[dash-loop] PC is required. Set PC to http://<PC_IP>:<PORT>/dash.png"
   exit 2
@@ -39,7 +39,10 @@ fi
 echo $$ > "$PIDFILE"
 
 cleanup() {
-  lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
+  if [ -f "$STOP" ]; then
+    lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
+    lipc-set-prop com.lab126.powerd disableScreenOff 0 2>/dev/null
+  fi
   rm -f "$PIDFILE" "$IMG.tmp"
 }
 trap cleanup EXIT INT TERM
@@ -58,8 +61,9 @@ failures=0
 echo "[dash-loop] start $(date) pid=$$ PC=$PC interval=${INTERVAL}s"
 
 while [ ! -f "$STOP" ]; do
-  # mantém a tela acesa (powerd reseta às vezes, então reforça todo ciclo)
+  # mantém a tela acesa e previne modo repouso
   lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
+  lipc-set-prop com.lab126.powerd disableScreenOff 1 2>/dev/null
 
   BATT=$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null || echo "")
   CHG=$(lipc-get-prop com.lab126.powerd isCharging 2>/dev/null || echo "0")

@@ -39,9 +39,17 @@
   html.kt3 h1 { font-size: 26px; font-weight: 800; }
   html.kt3 .stamp { font-size: 15px; font-weight: bold; }
   html.kt3 .cols { gap: 14px; }
-  html.kt3 .col-stacked { display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 0; }
-  html.kt3 .col-stacked .card { padding: 10px 12px; flex: 1; }
-  html.kt3 .col-stacked .card h2 { font-size: 18px; margin-bottom: 6px; padding-bottom: 2px; }
+  html.kt3 .col-stacked { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
+  html.kt3 .col-stacked .card { padding: 8px 12px; flex: 1; }
+  html.kt3 .col-stacked .card h2 { font-size: 18px; margin-bottom: 4px; padding-bottom: 2px; }
+  html.kt3 .col-stacked .row { margin: 4px 0; }
+  html.kt3 .col-stacked .row .label { font-size: 14px; margin-bottom: 2px; }
+  html.kt3 .col-stacked .bar { height: 15px; }
+  html.kt3 .col-stacked .reset { font-size: 12px; margin-top: 2px; }
+  html.kt3 .col-stacked .stat-grid { margin: 4px 0; gap: 4px; }
+  html.kt3 .col-stacked .stat-box { padding: 3px 4px; }
+  html.kt3 .col-stacked .stat-val { font-size: 15px; }
+  html.kt3 .col-stacked .stat-lbl { font-size: 9px; }
   html.kt3 .card { border: 3px solid #000; padding: 12px 14px; }
   html.kt3 .card h2 { font-size: 20px; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 4px; gap: 8px; }
   html.kt3 .card h2 .logo { width: 26px; height: 26px; flex: 0 0 26px; }
@@ -311,21 +319,15 @@
       return h + '</div>';
     }
     if (t.tool === 'antigravity') {
+      (t.windows || []).forEach(function (w) { h += bar(w.name, w.pct, w.resets_at); });
       var stepsStr = t.activeSessionSteps ? t.activeSessionSteps.toLocaleString(locale()) : '-';
       var statusBadge = t.status === 'Ativo' ? '● Ativo' : '○ Ocioso';
-      h += '<div class="stat-grid" style="margin:4px 0 6px">' +
+      h += '<div class="stat-grid" style="margin:4px 0 2px">' +
            '<div class="stat-box"><div class="stat-val">' + (t.totalConversations || 0) + '</div><div class="stat-lbl">Conversas</div></div>' +
            '<div class="stat-box"><div class="stat-val">' + (t.totalBrainProjects || 0) + '</div><div class="stat-lbl">Projetos</div></div>' +
            '<div class="stat-box"><div class="stat-val">' + stepsStr + '</div><div class="stat-lbl">Passos Sessão</div></div>' +
            '<div class="stat-box"><div class="stat-val">' + statusBadge + '</div><div class="stat-lbl">Status</div></div>' +
            '</div>';
-      if (t.recentConversations && t.recentConversations.length > 0) {
-        h += '<div class="model-list" style="margin-top:2px">';
-        t.recentConversations.slice(0, 2).forEach(function(c) {
-          h += '<div class="model-row"><span class="model-name">sessão ' + c.id + '</span><span class="model-detail">há ' + c.timeAgoMin + 'm</span></div>';
-        });
-        h += '</div>';
-      }
       return h + '</div>';
     }
     if (t.tool === 'chaosmachine') {
