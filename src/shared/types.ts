@@ -97,14 +97,39 @@ export interface WidgetItem {
   name: string
 }
 
+export type WidgetOptionsMap = Record<string, Record<string, boolean>>
+
+export interface DashboardBlock {
+  id: string
+  tool: string
+  width: 'half' | 'full'
+  height?: 'compact' | 'standard' | 'tall'
+  options?: Record<string, boolean>
+}
+
+export interface DashboardLayoutConfig {
+  mode: 'preset' | 'custom'
+  blocks: DashboardBlock[]
+}
+
 export interface DashboardWidgetsConfig {
   activeWidgets: string[]
   availableWidgets: WidgetItem[]
+  widgetOptions?: WidgetOptionsMap
+  layout?: DashboardLayoutConfig
 }
 
 export interface ActiveNotification {
   message: string
   expiresAt: number
+  createdAt: string
+}
+
+export interface ScheduledNotification {
+  id: string
+  message: string
+  durationSec: number
+  scheduledFor: number
   createdAt: string
 }
 
@@ -134,9 +159,14 @@ export interface DashboardApi {
   saveConfig: (config: DashboardConfigInput) => Promise<DashboardConfig>
   getWidgets: () => Promise<DashboardWidgetsConfig>
   saveWidgets: (activeWidgets: string[]) => Promise<DashboardWidgetsConfig>
+  saveWidgetOptions: (widgetOptions: WidgetOptionsMap) => Promise<DashboardWidgetsConfig>
+  saveLayout: (layout: DashboardLayoutConfig) => Promise<DashboardWidgetsConfig>
   getNotification: () => Promise<ActiveNotification | null>
   sendNotification: (message: string, durationSec?: number) => Promise<ActiveNotification | null>
   clearNotification: () => Promise<void>
+  getScheduledNotifications: () => Promise<ScheduledNotification[]>
+  scheduleNotification: (message: string, scheduledFor: number, durationSec?: number) => Promise<ScheduledNotification>
+  cancelScheduledNotification: (id: string) => Promise<void>
   getKindleLive: () => Promise<KindleLiveInfo>
   quit: () => Promise<void>
   onOpenPanel: (callback: () => void) => () => void
@@ -146,3 +176,4 @@ export interface DashboardApi {
   onPipChanged: (callback: (enabled: boolean) => void) => () => void
   onRenderCompleted: (callback: (result: RenderResult) => void) => () => void
 }
+

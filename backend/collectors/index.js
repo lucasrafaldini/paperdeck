@@ -6,6 +6,7 @@ const codex = require('./codex');
 const applemusic = require('./applemusic');
 const antigravity = require('./antigravity');
 const chaosmachine = require('./chaosmachine');
+const macstats = require('./macstats');
 const { readConfig } = require('../config');
 
 const REGISTRY = {
@@ -15,6 +16,7 @@ const REGISTRY = {
   applemusic,
   antigravity,
   chaosmachine,
+  macstats,
 };
 
 async function collectAll(requestedWidgets) {

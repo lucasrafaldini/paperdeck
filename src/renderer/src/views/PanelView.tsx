@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import PreviewFrame from '../PreviewFrame'
 import type { Translator } from '../i18n'
 import type { KindleLiveInfo, SupportedLanguage } from '../../../shared/types'
 import type { NavKey } from '../types'
 import { ActionButton } from '../components/ActionButton'
+import { LayoutEditor } from './LayoutEditor'
 
 interface PanelViewProps {
   baseUrl: string | undefined
@@ -11,6 +13,8 @@ interface PanelViewProps {
   onNav: (key: NavKey) => void
   previewKey: number
   t: Translator
+  onSaved?: (message: string) => void
+  onError?: (error: string) => void
 }
 
 export function PanelView({
@@ -20,7 +24,10 @@ export function PanelView({
   onNav,
   previewKey,
   t,
+  onSaved,
+  onError,
 }: PanelViewProps): React.JSX.Element {
+  const [isEditingLayout, setIsEditingLayout] = useState(false)
   const hasBattery = kindleLive && kindleLive.battery != null
 
   return (
@@ -67,6 +74,13 @@ export function PanelView({
 
         <div style={{ display: 'flex', gap: '8px' }}>
           <ActionButton
+            icon={isEditingLayout ? 'check' : 'slider'}
+            className={isEditingLayout ? '' : 'ghost'}
+            onClick={() => setIsEditingLayout(!isEditingLayout)}
+          >
+            {isEditingLayout ? '👁️ Ver Preview' : '🎨 Editor de Blocos'}
+          </ActionButton>
+          <ActionButton
             icon="slider"
             className="ghost"
             onClick={() => onNav('widgets')}
@@ -83,15 +97,28 @@ export function PanelView({
         </div>
       </div>
 
-      <section className="preview-wrap">
-        <section className="preview-panel">
-          {baseUrl ? (
-            <PreviewFrame baseUrl={baseUrl} language={language} previewKey={previewKey} />
-          ) : (
-            <div className="loading">{t('appLoading')}</div>
-          )}
+      {isEditingLayout ? (
+        <LayoutEditor
+          onSaved={(msg) => {
+            if (onSaved) onSaved(msg)
+            setIsEditingLayout(false)
+          }}
+          onError={onError || (() => {})}
+          t={t}
+          onClose={() => setIsEditingLayout(false)}
+        />
+      ) : (
+        <section className="preview-wrap">
+          <section className="preview-panel">
+            {baseUrl ? (
+              <PreviewFrame baseUrl={baseUrl} language={language} previewKey={previewKey} />
+            ) : (
+              <div className="loading">{t('appLoading')}</div>
+            )}
+          </section>
         </section>
-      </section>
+      )}
     </section>
   )
 }
+

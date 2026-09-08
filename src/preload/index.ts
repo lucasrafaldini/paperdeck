@@ -26,9 +26,15 @@ const api: DashboardApi = {
   saveConfig: (config: DashboardConfigInput) => ipcRenderer.invoke('config:save', config),
   getWidgets: () => ipcRenderer.invoke('widgets:get'),
   saveWidgets: (activeWidgets: string[]) => ipcRenderer.invoke('widgets:save', activeWidgets),
+  saveWidgetOptions: (widgetOptions) => ipcRenderer.invoke('widgets:saveOptions', widgetOptions),
+  saveLayout: (layout) => ipcRenderer.invoke('widgets:saveLayout', layout),
   getNotification: () => ipcRenderer.invoke('notify:get'),
   sendNotification: (message: string, durationSec?: number) => ipcRenderer.invoke('notify:set', message, durationSec),
   clearNotification: () => ipcRenderer.invoke('notify:clear'),
+  getScheduledNotifications: () => ipcRenderer.invoke('notify:getScheduled'),
+  scheduleNotification: (message: string, scheduledFor: number, durationSec?: number) =>
+    ipcRenderer.invoke('notify:schedule', message, scheduledFor, durationSec),
+  cancelScheduledNotification: (id: string) => ipcRenderer.invoke('notify:cancelScheduled', id),
   getKindleLive: () => ipcRenderer.invoke('kindle:live'),
   quit: () => ipcRenderer.invoke('app:quit'),
   onOpenPanel: (callback) => {

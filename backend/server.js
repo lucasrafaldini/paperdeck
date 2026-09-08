@@ -43,6 +43,33 @@ function saveKindleStatus() {
 
 let activeNotification = null;
 
+function checkScheduledQueue() {
+  const currentCfg = configMgr.readConfig();
+  const list = currentCfg.scheduledNotifications || [];
+  if (!list || list.length === 0) return;
+  const now = Date.now();
+  const due = [];
+  const remaining = [];
+  for (const item of list) {
+    if (item.scheduledFor <= now) {
+      due.push(item);
+    } else {
+      remaining.push(item);
+    }
+  }
+  if (due.length > 0) {
+    const latest = due[due.length - 1];
+    activeNotification = {
+      message: latest.message,
+      expiresAt: now + (latest.durationSec * 1000),
+      createdAt: new Date().toISOString(),
+    };
+    configMgr.writeConfig({ scheduledNotifications: remaining });
+  }
+}
+
+setInterval(checkScheduledQueue, 5000).unref();
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
@@ -190,25 +217,79 @@ function createServer(deps = {}) {
         activeNotification = null;
         return send(res, 200, JSON.stringify({ ok: true }), { 'Content-Type': MIME['.json'] });
       }
+      checkScheduledQueue();
       if (activeNotification && activeNotification.expiresAt && Date.now() > activeNotification.expiresAt) {
         activeNotification = null;
       }
       return send(res, 200, JSON.stringify({ notification: activeNotification }), { 'Content-Type': MIME['.json'] });
+    }
+    if (url === '/api/notify/scheduled') {
+      const cfg = configMgr.readConfig();
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', (c) => { body += c; });
+        req.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            const msg = String(parsed.message || '').trim();
+            const scheduledFor = Number.parseInt(parsed.scheduledFor, 10);
+            const durationSec = Number.parseInt(parsed.durationSec || '300', 10);
+            if (!msg || !scheduledFor) {
+              return send(res, 400, JSON.stringify({ error: 'message and scheduledFor required' }), { 'Content-Type': MIME['.json'] });
+            }
+            const newItem = {
+              id: 'sched_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+              message: msg,
+              durationSec,
+              scheduledFor,
+              createdAt: new Date().toISOString(),
+            };
+            const list = Array.isArray(cfg.scheduledNotifications) ? [...cfg.scheduledNotifications, newItem] : [newItem];
+            configMgr.writeConfig({ scheduledNotifications: list });
+            send(res, 200, JSON.stringify({ ok: true, item: newItem, scheduledNotifications: list }), { 'Content-Type': MIME['.json'] });
+          } catch (e) {
+            send(res, 400, JSON.stringify({ error: String(e.message || e) }), { 'Content-Type': MIME['.json'] });
+          }
+        });
+        return;
+      }
+      if (req.method === 'DELETE') {
+        let body = '';
+        req.on('data', (c) => { body += c; });
+        req.on('end', () => {
+          try {
+            const parsed = JSON.parse(body || '{}');
+            const q = new URLSearchParams(requestUrl.split('?')[1] || '');
+            const targetId = parsed.id || q.get('id');
+            const list = (cfg.scheduledNotifications || []).filter((item) => item.id !== targetId);
+            configMgr.writeConfig({ scheduledNotifications: list });
+            send(res, 200, JSON.stringify({ ok: true, scheduledNotifications: list }), { 'Content-Type': MIME['.json'] });
+          } catch (e) {
+            send(res, 400, JSON.stringify({ error: String(e.message || e) }), { 'Content-Type': MIME['.json'] });
+          }
+        });
+        return;
+      }
+      return send(res, 200, JSON.stringify({ scheduledNotifications: cfg.scheduledNotifications || [] }), { 'Content-Type': MIME['.json'] });
     }
     if (url === '/render') {
       return fs.readFile(path.join(__dirname, '..', 'render', 'dashboard.html'), 'utf8', (error, html) => {
         if (error) return send(res, 404, 'no render');
         const lang = new URLSearchParams(requestUrl.split('?')[1] || '').get('lang') || 'en';
         const localeData = readLocaleI18n(lang);
+        checkScheduledQueue();
         if (activeNotification && activeNotification.expiresAt && Date.now() > activeNotification.expiresAt) {
           activeNotification = null;
         }
+        const currentCfg = configMgr.readConfig();
         return collectAll()
           .then((data) => {
             const payload = {
               ...data,
               kindleStatus,
               notification: activeNotification ? activeNotification.message : null,
+              widgetOptions: currentCfg.widgetOptions,
+              layout: currentCfg.layout,
             };
             const script = `<script>window.__INITIAL_DATA__ = ${JSON.stringify(payload)}; window.__INITIAL_I18N__ = ${JSON.stringify(localeData)};</script>`;
             send(res, 200, html.replace('<!--__INJECT__-->', script), { 'Content-Type': MIME['.html'] });

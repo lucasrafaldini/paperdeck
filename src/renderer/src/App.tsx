@@ -423,6 +423,8 @@ export default function App(): React.JSX.Element {
               onNav={setNav}
               previewKey={previewKey}
               t={t}
+              onSaved={(msg) => showMessage('painel', msg)}
+              onError={(err) => showError('painel', err)}
             />
           ) : null}
 

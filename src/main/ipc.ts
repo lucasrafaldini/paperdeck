@@ -6,6 +6,7 @@ import type {
   AuthStatus,
   DashboardConfig,
   DashboardConfigInput,
+  DashboardLayoutConfig,
   DashboardWidgetsConfig,
   KindleInstallResult,
   KindleLiveInfo,
@@ -13,6 +14,8 @@ import type {
   KindleStatus,
   LanguagePreference,
   RuntimeInfo,
+  ScheduledNotification,
+  WidgetOptionsMap,
 } from '../shared/types'
 import { getAuthStatus, openLogin } from './auth'
 import { BASE_URL, REPO_URL } from './constants'
@@ -137,6 +140,52 @@ export function registerIpc(handlers: IpcHandlers): void {
     return result
   })
 
+  ipcMain.handle('widgets:saveOptions', async (_event, widgetOptions: WidgetOptionsMap): Promise<DashboardWidgetsConfig> => {
+    let result: DashboardWidgetsConfig
+    try {
+      const res = await fetch(`${BASE_URL}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ widgetOptions }),
+        signal: AbortSignal.timeout(3000),
+      })
+      if (res.ok) {
+        result = (await res.json()) as DashboardWidgetsConfig
+      } else {
+        throw new Error('failed')
+      }
+    } catch {
+      const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+      const configMgr = require(join(root, 'backend', 'config.js')) as { writeConfig: (patch: unknown) => DashboardWidgetsConfig }
+      result = configMgr.writeConfig({ widgetOptions })
+    }
+    void renderDashboard().catch(() => {})
+    return result
+  })
+
+  ipcMain.handle('widgets:saveLayout', async (_event, layout: DashboardLayoutConfig): Promise<DashboardWidgetsConfig> => {
+    let result: DashboardWidgetsConfig
+    try {
+      const res = await fetch(`${BASE_URL}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ layout }),
+        signal: AbortSignal.timeout(3000),
+      })
+      if (res.ok) {
+        result = (await res.json()) as DashboardWidgetsConfig
+      } else {
+        throw new Error('failed')
+      }
+    } catch {
+      const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+      const configMgr = require(join(root, 'backend', 'config.js')) as { writeConfig: (patch: unknown) => DashboardWidgetsConfig }
+      result = configMgr.writeConfig({ layout })
+    }
+    void renderDashboard().catch(() => {})
+    return result
+  })
+
   ipcMain.handle('notify:get', async (): Promise<ActiveNotification | null> => {
     try {
       const res = await fetch(`${BASE_URL}/api/notify`, { signal: AbortSignal.timeout(3000) })
@@ -173,6 +222,42 @@ export function registerIpc(handlers: IpcHandlers): void {
       })
       void renderDashboard().catch(() => {})
     } catch {}
+  })
+
+  ipcMain.handle('notify:getScheduled', async (): Promise<ScheduledNotification[]> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/notify/scheduled`, { signal: AbortSignal.timeout(3000) })
+      if (res.ok) {
+        const data = (await res.json()) as { scheduledNotifications: ScheduledNotification[] }
+        return data.scheduledNotifications || []
+      }
+    } catch {}
+    const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+    const configMgr = require(join(root, 'backend', 'config.js')) as { readConfig: () => { scheduledNotifications?: ScheduledNotification[] } }
+    return configMgr.readConfig().scheduledNotifications || []
+  })
+
+  ipcMain.handle('notify:schedule', async (_event, message: string, scheduledFor: number, durationSec?: number): Promise<ScheduledNotification> => {
+    const res = await fetch(`${BASE_URL}/api/notify/scheduled`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, scheduledFor, durationSec: durationSec || 300 }),
+      signal: AbortSignal.timeout(3000),
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { item: ScheduledNotification }
+      return data.item
+    }
+    throw new Error('Falha ao agendar notificação')
+  })
+
+  ipcMain.handle('notify:cancelScheduled', async (_event, id: string): Promise<void> => {
+    await fetch(`${BASE_URL}/api/notify/scheduled`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+      signal: AbortSignal.timeout(3000),
+    })
   })
 
   ipcMain.handle('kindle:live', async (): Promise<KindleLiveInfo> => {
