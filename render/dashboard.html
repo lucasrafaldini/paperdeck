@@ -39,17 +39,24 @@
   html.kt3 h1 { font-size: 26px; font-weight: 800; }
   html.kt3 .stamp { font-size: 15px; font-weight: bold; }
   html.kt3 .cols { gap: 14px; }
-  html.kt3 .col-stacked { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
-  html.kt3 .col-stacked .card { padding: 8px 12px; flex: 1; }
-  html.kt3 .col-stacked .card h2 { font-size: 18px; margin-bottom: 4px; padding-bottom: 2px; }
-  html.kt3 .col-stacked .row { margin: 4px 0; }
+  html.kt3 .col-stacked { display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 0; }
+  html.kt3 .col-stacked .card { padding: 10px 14px; flex: 1; display: flex; flex-direction: column; }
+  html.kt3 .col-stacked .card h2 { font-size: 19px; margin-bottom: 6px; padding-bottom: 3px; }
+  html.kt3 .col-stacked .row { margin: 5px 0; }
   html.kt3 .col-stacked .row .label { font-size: 14px; margin-bottom: 2px; }
-  html.kt3 .col-stacked .bar { height: 15px; }
+  html.kt3 .col-stacked .bar { height: 16px; }
   html.kt3 .col-stacked .reset { font-size: 12px; margin-top: 2px; }
-  html.kt3 .col-stacked .stat-grid { margin: 4px 0; gap: 4px; }
-  html.kt3 .col-stacked .stat-box { padding: 3px 4px; }
-  html.kt3 .col-stacked .stat-val { font-size: 15px; }
-  html.kt3 .col-stacked .stat-lbl { font-size: 9px; }
+  html.kt3 .col-stacked .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 6px;
+    border-top: 1px solid #888;
+  }
+  html.kt3 .col-stacked .stat-box { border: none; padding: 2px; text-align: center; }
+  html.kt3 .col-stacked .stat-val { font-size: 15px; font-weight: bold; }
+  html.kt3 .col-stacked .stat-lbl { font-size: 9px; opacity: 0.8; }
   html.kt3 .card { border: 3px solid #000; padding: 12px 14px; }
   html.kt3 .card h2 { font-size: 20px; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 4px; gap: 8px; }
   html.kt3 .card h2 .logo { width: 26px; height: 26px; flex: 0 0 26px; }

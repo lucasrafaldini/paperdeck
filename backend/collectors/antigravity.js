@@ -1,12 +1,101 @@
-// Coletor Antigravity — lê métricas de agentes, sessões e tarefas do Antigravity local.
+// Coletor Antigravity — lê métricas reais da API do Language Server local e arquivos do Brain.
+const { execSync } = require('child_process');
 const fs = require('fs');
+const https = require('https');
 const os = require('os');
 const path = require('path');
 
 const AGY_DIR = path.join(os.homedir(), '.gemini', 'antigravity');
-const CACHE_TTL_MS = 20000; // 20s cache para não reler arquivos em toda requisição
+const CACHE_TTL_MS = 20000; // 20s cache
 
 let cache = { at: 0, data: null };
+let lastKnownPort = null;
+let lastKnownCsrf = null;
+
+function discoverServer() {
+  try {
+    const ps = execSync('ps aux | grep "language_server.*--csrf_token" | grep -v grep', { encoding: 'utf8' });
+    const matchPid = ps.match(/^\S+\s+(\d+)/);
+    const matchCsrf = ps.match(/--csrf_token\s+([a-f0-9-]+)/);
+    if (!matchPid || !matchCsrf) return null;
+    const pid = matchPid[1];
+    const csrf = matchCsrf[1];
+
+    const lsof = execSync(`lsof -Pan -p ${pid} -i | grep LISTEN`, { encoding: 'utf8' });
+    const ports = [];
+    for (const line of lsof.split('\n')) {
+      const m = line.match(/:(\d+)\s+\(LISTEN\)/);
+      if (m) {
+        const p = parseInt(m[1], 10);
+        if (!ports.includes(p)) ports.push(p);
+      }
+    }
+    return { pid, csrf, ports };
+  } catch {
+    return null;
+  }
+}
+
+function queryQuotaEndpoint(port, csrf) {
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary',
+      method: 'POST',
+      rejectUnauthorized: false,
+      timeout: 600,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-codeium-csrf-token': csrf,
+      },
+    }, (res) => {
+      let body = '';
+      res.on('data', (c) => { body += c; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed && parsed.response && parsed.response.groups) {
+            resolve(parsed.response);
+          } else {
+            reject(new Error('no groups in response'));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('timeout'));
+    });
+    req.write('{}');
+    req.end();
+  });
+}
+
+async function fetchLiveQuota() {
+  // Tenta porta conhecida primeiro
+  if (lastKnownPort && lastKnownCsrf) {
+    try {
+      return await queryQuotaEndpoint(lastKnownPort, lastKnownCsrf);
+    } catch {}
+  }
+
+  const info = discoverServer();
+  if (!info) return null;
+
+  lastKnownCsrf = info.csrf;
+  for (const port of info.ports) {
+    try {
+      const res = await queryQuotaEndpoint(port, info.csrf);
+      lastKnownPort = port;
+      return res;
+    } catch {}
+  }
+  return null;
+}
 
 async function collect() {
   const now = Date.now();
@@ -15,20 +104,9 @@ async function collect() {
   }
 
   try {
-    if (!fs.existsSync(AGY_DIR)) {
-      return {
-        tool: 'antigravity',
-        label: 'Antigravity AI',
-        confidence: 'idle',
-        windows: [],
-        totalConversations: 0,
-        totalBrainProjects: 0,
-        activeSessionSteps: 0,
-        recentConversations: [],
-        status: 'Offline',
-      };
-    }
+    const quotaData = await fetchLiveQuota();
 
+    // Lê dados complementares de sessões e projetos locais
     const convDir = path.join(AGY_DIR, 'conversations');
     let totalConversations = 0;
     let recentConversations = [];
@@ -59,57 +137,49 @@ async function collect() {
     let totalBrainProjects = 0;
     let activeSessionSteps = 0;
 
-    const fiveHoursAgo = now - 5 * 3600 * 1000;
-    const sevenDaysAgo = now - 7 * 24 * 3600 * 1000;
-    let steps5h = 0;
-    let steps7d = 0;
-    let earliest5h = null;
-    let earliest7d = null;
-
     if (fs.existsSync(brainDir)) {
       const entries = fs.readdirSync(brainDir, { withFileTypes: true });
       totalBrainProjects = entries.filter((e) => e.isDirectory()).length;
 
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-        const transcriptPath = path.join(brainDir, entry.name, '.system_generated', 'logs', 'transcript.jsonl');
-        if (!fs.existsSync(transcriptPath)) continue;
-
-        try {
-          const content = fs.readFileSync(transcriptPath, 'utf8');
-          const lines = content.trim().split('\n');
-
-          if (latestConvId && entry.name === latestConvId) {
-            activeSessionSteps = lines.filter(Boolean).length;
-          }
-
-          for (const line of lines) {
-            if (!line) continue;
-            const item = JSON.parse(line);
-            if (item.created_at) {
-              const t = new Date(item.created_at).getTime();
-              if (t >= fiveHoursAgo) {
-                steps5h++;
-                if (!earliest5h || t < earliest5h) earliest5h = t;
-              }
-              if (t >= sevenDaysAgo) {
-                steps7d++;
-                if (!earliest7d || t < earliest7d) earliest7d = t;
-              }
-            }
-          }
-        } catch {}
+      if (latestConvId) {
+        const transcriptPath = path.join(brainDir, latestConvId, '.system_generated', 'logs', 'transcript.jsonl');
+        if (fs.existsSync(transcriptPath)) {
+          try {
+            const content = fs.readFileSync(transcriptPath, 'utf8');
+            activeSessionSteps = content.trim().split('\n').filter(Boolean).length;
+          } catch {}
+        }
       }
     }
 
-    const limit5h = Number.parseInt(process.env.ANTIGRAVITY_5H_LIMIT || '50', 10);
-    const limit7d = Number.parseInt(process.env.ANTIGRAVITY_7D_LIMIT || '5000', 10);
+    let windows = [];
+    if (quotaData && Array.isArray(quotaData.groups) && quotaData.groups.length > 0) {
+      // Grupo principal Gemini Models
+      const geminiGroup = quotaData.groups.find((g) => /gemini/i.test(g.displayName)) || quotaData.groups[0];
+      const buckets = geminiGroup.buckets || [];
+      const b5h = buckets.find((b) => b.window === '5h');
+      const bWeekly = buckets.find((b) => b.window === 'weekly');
 
-    const pct5h = Math.min(100, Math.max(0, Math.round((steps5h / limit5h) * 100)));
-    const pct7d = Math.min(100, Math.max(0, Math.round((steps7d / limit7d) * 100)));
+      if (b5h) {
+        const remaining = typeof b5h.remainingFraction === 'number' ? b5h.remainingFraction : 1;
+        const usedPct = Math.max(0, Math.min(100, Math.round((1 - remaining) * 100)));
+        windows.push({
+          name: '5h',
+          pct: usedPct,
+          resets_at: b5h.resetTime || null,
+        });
+      }
 
-    const reset5hIso = earliest5h ? new Date(earliest5h + 5 * 3600 * 1000).toISOString() : new Date(now + 3600 * 1000).toISOString();
-    const reset7dIso = earliest7d ? new Date(earliest7d + 7 * 24 * 3600 * 1000).toISOString() : new Date(now + 24 * 3600 * 1000).toISOString();
+      if (bWeekly) {
+        const remaining = typeof bWeekly.remainingFraction === 'number' ? bWeekly.remainingFraction : 1;
+        const usedPct = Math.max(0, Math.min(100, Math.round((1 - remaining) * 100)));
+        windows.push({
+          name: '7d',
+          pct: usedPct,
+          resets_at: bWeekly.resetTime || null,
+        });
+      }
+    }
 
     const isRecentlyActive = recentConversations.length > 0 && recentConversations[0].timeAgoMin <= 15;
     const status = isRecentlyActive ? 'Ativo' : 'Ocioso';
@@ -117,13 +187,8 @@ async function collect() {
     const result = {
       tool: 'antigravity',
       label: 'Antigravity AI',
-      confidence: 'live',
-      windows: [
-        { name: '5h', pct: pct5h, resets_at: reset5hIso },
-        { name: '7d', pct: pct7d, resets_at: reset7dIso },
-      ],
-      steps5h,
-      steps7d,
+      confidence: quotaData ? 'live' : 'idle',
+      windows,
       totalConversations,
       totalBrainProjects,
       activeSessionSteps,
