@@ -111,3 +111,40 @@ test('claude collector marks cached limits stale after all windows expire', asyn
     fs.rmSync(homeDir, { recursive: true, force: true });
   }
 });
+
+test('claude collector calculates 5h and 7d resets from desktop history', async () => {
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kindle-dashboard-claude-'));
+  const historyPath = path.join(homeDir, 'Library', 'Application Support', 'Claude', 'plan-usage-history.json');
+  fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+
+  const t0 = Date.parse('2026-09-01T12:00:00.000Z');
+  const samples = [
+    { t: t0, org: 'test-org', u: { fh: 0, sd: 0 } },
+    { t: t0 + 3600_000, org: 'test-org', u: { fh: 20, sd: 10 } },
+    { t: t0 + 7200_000, org: 'test-org', u: { fh: 45, sd: 15 } }
+  ];
+  fs.writeFileSync(historyPath, JSON.stringify({ samples }));
+
+  try {
+    Date.now = () => t0 + 7200_000;
+    const collector = loadCollectorForHome(homeDir);
+    const res = await collector.collect();
+
+    assert.equal(res.tool, 'claude');
+    assert.equal(res.windows.length, 2);
+    const w5h = res.windows.find(w => w.name === '5h');
+    const w7d = res.windows.find(w => w.name === '7d');
+
+    assert.ok(w5h && w5h.resets_at, '5h should have resets_at');
+    assert.ok(w7d && w7d.resets_at, '7d should have resets_at');
+    assert.equal(w5h.pct, 45);
+    assert.equal(w7d.pct, 15);
+    // 5h window started at t0 + 3600_000 -> resets at t0 + 3600_000 + 5h
+    assert.equal(w5h.resets_at, new Date(t0 + 3600_000 + 5 * 3600_000).toISOString());
+    // 7d window started at t0 -> resets at t0 + 7 * 24 * 3600_000
+    assert.equal(w7d.resets_at, new Date(t0 + 7 * 24 * 3600_000).toISOString());
+  } finally {
+    fs.rmSync(homeDir, { recursive: true, force: true });
+  }
+});
+

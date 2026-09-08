@@ -16,6 +16,69 @@ const STALE_NOTE_KEY = 'claudeStale';
 let cache = { at: 0, data: null };
 let lastAttempt = 0; // gate: nunca bate no endpoint mais de 1x/MIN_INTERVAL (mesmo em erro → evita 429)
 
+function computeDesktopResets(samples, now = Date.now()) {
+  if (!samples || !samples.length) return { reset5h: null, reset7d: null };
+  const last = samples[samples.length - 1];
+  const fh = last && last.u ? Number(last.u.fh || 0) : 0;
+
+  // 1. Ciclo semanal 7d
+  let last7dResetTime = null;
+  for (let i = samples.length - 1; i >= 1; i--) {
+    const prev = samples[i - 1].u ? Number(samples[i - 1].u.sd || 0) : 0;
+    const curr = samples[i].u ? Number(samples[i].u.sd || 0) : 0;
+    if (curr === 0 || curr < prev - 15) {
+      last7dResetTime = samples[i].t;
+      break;
+    }
+  }
+  if (!last7dResetTime) {
+    last7dResetTime = samples[0].t;
+  }
+  const WEEK_MS = 7 * 24 * 3600 * 1000;
+  let target7d = last7dResetTime + WEEK_MS;
+  while (target7d <= now) {
+    target7d += WEEK_MS;
+  }
+  const reset7d = new Date(target7d).toISOString();
+
+  // 2. Ciclo de 5 horas
+  const FIVE_H_MS = 5 * 3600 * 1000;
+  let reset5h = null;
+  if (fh > 0) {
+    let start5h = last.t;
+    for (let i = samples.length - 1; i >= 0; i--) {
+      const uFh = samples[i].u ? Number(samples[i].u.fh || 0) : 0;
+      if (uFh > 0) {
+        start5h = samples[i].t;
+      } else {
+        break;
+      }
+    }
+    let target5h = start5h + FIVE_H_MS;
+    while (target5h <= now) {
+      target5h += FIVE_H_MS;
+    }
+    reset5h = new Date(target5h).toISOString();
+  } else {
+    let last0Time = last.t;
+    for (let i = samples.length - 1; i >= 1; i--) {
+      const prev = samples[i - 1].u ? Number(samples[i - 1].u.fh || 0) : 0;
+      const curr = samples[i].u ? Number(samples[i].u.fh || 0) : 0;
+      if (prev > 0 && curr === 0) {
+        last0Time = samples[i].t;
+        break;
+      }
+    }
+    let target5h = last0Time + FIVE_H_MS;
+    while (target5h <= now) {
+      target5h += FIVE_H_MS;
+    }
+    reset5h = new Date(target5h).toISOString();
+  }
+
+  return { reset5h, reset7d };
+}
+
 function readDesktopHistory() {
   if (!fs.existsSync(DESKTOP_HISTORY)) return null;
   try {
@@ -25,12 +88,13 @@ function readDesktopHistory() {
     if (!samples.length) return null;
     const last = samples[samples.length - 1];
     if (!last || !last.u) return null;
+    const resets = computeDesktopResets(samples);
     return {
       tool: 'claude',
       label: 'Claude',
       windows: [
-        { name: '5h', pct: Number(last.u.fh || 0) },
-        { name: '7d', pct: Number(last.u.sd || 0) }
+        { name: '5h', pct: Number(last.u.fh || 0), resets_at: resets.reset5h },
+        { name: '7d', pct: Number(last.u.sd || 0), resets_at: resets.reset7d }
       ],
       confidence: 'live',
       updatedAt: new Date(last.t || Date.now()).toISOString()
