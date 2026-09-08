@@ -27,9 +27,11 @@
   html, body { width: 1072px; height: 1448px; background: #fff; color: #000; overflow: hidden; }
   body { font-family: Helvetica, Arial, sans-serif; -webkit-font-smoothing: none; }
 
-  /* Kindle 8th Gen (KT3) 800x600 in 600x800 framebuffer */
-  html.kt3, html.kt3 body { width: 600px; height: 800px; }
+  /* Kindle 8th Gen (KT3) 800x600 landscape */
+  html.kt3, html.kt3 body { width: 800px; height: 600px; }
   html.kt3 .stage {
+    position: relative; top: auto; left: auto;
+    transform: none;
     width: 800px; height: 600px;
     padding: 16px 20px;
   }
