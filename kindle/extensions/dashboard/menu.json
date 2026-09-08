@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "name": "▶ Iniciar Dashboard",
+      "priority": 1,
+      "action": "/bin/sh /mnt/us/dash-autostart.sh"
+    },
+    {
+      "name": "⏹ Parar Dashboard",
+      "priority": 2,
+      "action": "touch /mnt/us/dash-loop.stop && lipc-set-prop com.lab126.powerd preventScreenSaver 0"
+    },
+    {
+      "name": "ℹ Status do Loop",
+      "priority": 3,
+      "action": "ps aux | grep -v grep | grep dash-loop >/dev/null && (/usr/bin/fbink -q -m -y 10 'Dashboard: RODANDO' || /mnt/us/libkh/bin/fbink -q -m -y 10 'Dashboard: RODANDO') || (/usr/bin/fbink -q -m -y 10 'Dashboard: PARADO' || /mnt/us/libkh/bin/fbink -q -m -y 10 'Dashboard: PARADO')"
+    }
+  ]
+}
