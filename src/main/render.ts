@@ -129,7 +129,7 @@ async function performRender(): Promise<RenderResult> {
   const captureScale = viewport.scale.toFixed(6)
   const readyTitle = `READY:${captureId}`
   await captureWindow.loadURL(
-    `${BASE_URL}/render?capture=${captureId}&ready=${encodeURIComponent(captureId)}&captureScale=${captureScale}&lang=${encodeURIComponent(getActiveLanguage())}`,
+    `${BASE_URL}/render?capture=${captureId}&ready=${encodeURIComponent(captureId)}&captureScale=${captureScale}&lang=${encodeURIComponent(getActiveLanguage())}&device=kt3`,
   )
   await waitUntilReady(captureWindow, readyTitle)
   const image = await captureWindow.webContents.capturePage({

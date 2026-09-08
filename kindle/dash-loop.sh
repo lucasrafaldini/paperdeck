@@ -75,7 +75,7 @@ while [ ! -f "$STOP" ]; do
     if [ $((i % FULL_EVERY)) -eq 0 ]; then
       "$FBINK" -f -c >/dev/null 2>&1            # refresh completo com flash (limpa ghosting)
     fi
-    "$FBINK" -g file="$IMG" -W GC16 >/dev/null 2>&1
+    "$FBINK" -g file="$IMG",w=-2,h=-2 -W GC16 >/dev/null 2>&1
   else
     rm -f "$IMG.tmp"
     failures=$((failures + 1))
