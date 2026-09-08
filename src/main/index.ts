@@ -11,15 +11,18 @@ import {
   scheduleRender,
   stopRenderTimer,
 } from './render'
-import { createTray, destroyTray } from './tray'
+import { createTray, destroyTray, updateTrayStatus } from './tray'
 import {
   createMainWindow,
   destroyMainWindow,
   restoreMainWindow,
   setQuitting,
+  showNotifyWindow,
   showPanelWindow,
   showSettingsWindow,
+  showWidgetsWindow,
 } from './windows'
+import { BASE_URL, PORT } from './constants'
 
 let quitInProgress: Promise<void> | null = null
 
@@ -83,11 +86,34 @@ if (!hasLock) {
     createTray({
       onOpenPanel: showPanelWindow,
       onOpenSettings: showSettingsWindow,
+      onOpenWidgets: showWidgetsWindow,
+      onOpenNotify: showNotifyWindow,
       onRefresh: () => {
         void renderDashboard()
       },
       onQuit: quitApplication,
     })
+
+    const pollKindleStatus = async (): Promise<void> => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/kindle`, { signal: AbortSignal.timeout(2500) })
+        if (res.ok) {
+          const data = (await res.json()) as { battery: number | null; isCharging: boolean; lastSeen: number | null }
+          updateTrayStatus({
+            serverOnline: true,
+            port: PORT,
+            battery: data.battery,
+            isCharging: Boolean(data.isCharging),
+            lastSeen: data.lastSeen,
+          })
+          return
+        }
+      } catch {}
+      updateTrayStatus({ serverOnline: false })
+    }
+    void pollKindleStatus()
+    setInterval(() => void pollKindleStatus(), 8000)
+
     await renderDashboard()
     applyPipPreference(config.pictureInPicture)
     if (config.setupComplete) runStartupChecks()

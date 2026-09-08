@@ -15,12 +15,14 @@ let cachedAppCommit =
 
 export function appAssetPath(name: string): string {
   if (app.isPackaged) return join(process.resourcesPath, name)
-  return join(app.getAppPath(), 'build', name)
+  const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+  return join(root, 'build', name)
 }
 
 export function runtimeOutputPath(): string {
   if (app.isPackaged) return join(app.getPath('userData'), 'runtime', 'dash.png')
-  return join(app.getAppPath(), 'out', 'dash.png')
+  const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+  return join(root, 'out', 'dash.png')
 }
 
 export function configPath(): string {

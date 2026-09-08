@@ -22,6 +22,8 @@ let restartTimer = null;
 let stopping = false;
 let rendering = false;
 
+const { renderOnce } = require('./render-firefox');
+
 function positiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -30,12 +32,11 @@ function positiveInt(value, fallback) {
 function findChrome() {
   const candidates = [
     process.env.CHROME,
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
   ].filter(Boolean);
-  const found = candidates.find((candidate) => fs.existsSync(candidate));
-  if (!found) throw new Error('Chrome not found; set CHROME to chrome.exe');
-  return found;
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
 function log(message) {
@@ -119,6 +120,13 @@ async function render() {
   try {
     if (!(await backendIsReady())) {
       log('render skipped: backend is not ready');
+      return;
+    }
+
+    if (!CHROME) {
+      await renderOnce({ port: PORT, width: 600, height: 800 });
+      const stat = fs.statSync(IMAGE);
+      log(`render ok (${stat.size} bytes)`);
       return;
     }
 

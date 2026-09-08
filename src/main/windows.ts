@@ -104,6 +104,16 @@ export function showPanelWindow(): void {
   sendToRenderer('panel:open')
 }
 
+export function showWidgetsWindow(): void {
+  restoreMainWindow()
+  sendToRenderer('widgets:open')
+}
+
+export function showNotifyWindow(): void {
+  restoreMainWindow()
+  sendToRenderer('notify:open')
+}
+
 export function destroyMainWindow(): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy()
   mainWindow = null

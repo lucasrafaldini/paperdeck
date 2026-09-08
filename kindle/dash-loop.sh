@@ -14,7 +14,13 @@ WIFI_RETRY_EVERY="${WIFI_RETRY_EVERY:-3}" # tenta recuperar WiFi após N falhas 
 MAX_FAILURES="${MAX_FAILURES:-6}" # para o script após N falhas consecutivas (0 = sem limite)
 STOP=/mnt/us/dash-loop.stop
 PIDFILE=/mnt/us/dash-loop.pid
-FBINK=/usr/bin/fbink
+if [ -x /mnt/us/libkh/bin/fbink ]; then
+  FBINK=/mnt/us/libkh/bin/fbink
+elif [ -x /usr/bin/fbink ]; then
+  FBINK=/usr/bin/fbink
+else
+  FBINK=fbink
+fi
 
 case "$INTERVAL" in ''|*[!0-9]*) INTERVAL=45;; esac
 case "$FULL_EVERY" in ''|*[!0-9]*|0) FULL_EVERY=20;; esac
@@ -55,7 +61,11 @@ while [ ! -f "$STOP" ]; do
   # mantém a tela acesa (powerd reseta às vezes, então reforça todo ciclo)
   lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
 
-  if curl -fsS --connect-timeout 10 --max-time 30 "$PC" -o "$IMG.tmp" 2>/dev/null && [ -s "$IMG.tmp" ]; then
+  BATT=$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null || echo "")
+  CHG=$(lipc-get-prop com.lab126.powerd isCharging 2>/dev/null || echo "0")
+  REQ_URL="${PC}?bat=${BATT}&chg=${CHG}"
+
+  if curl -fsS --connect-timeout 10 --max-time 30 "$REQ_URL" -o "$IMG.tmp" 2>/dev/null && [ -s "$IMG.tmp" ]; then
     mv "$IMG.tmp" "$IMG"
     failures=0
     if [ $((i % FULL_EVERY)) -eq 0 ]; then

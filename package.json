@@ -13,6 +13,7 @@
     "dev": "node scripts/electron-vite.js dev",
     "build": "npm run typecheck && node scripts/electron-vite.js build",
     "preview": "node scripts/electron-vite.js preview",
+    "build:mac": "npm run build && electron-builder --mac --dir",
     "build:win": "npm run build && electron-builder --win",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",

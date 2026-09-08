@@ -22,7 +22,11 @@ function iso(ms) {
 }
 
 function checkClaude() {
-  const r = { name: 'claude', label: 'Claude Code' };
+  const r = { name: 'claude', label: 'Claude' };
+  const desktopHistory = path.join(H, 'Library', 'Application Support', 'Claude', 'plan-usage-history.json');
+  if (fs.existsSync(desktopHistory)) {
+    return { ...r, ok: true, detailKey: 'valid', detailVars: { mode: 'desktop' } };
+  }
   try {
     const c = JSON.parse(fs.readFileSync(path.join(H, '.claude', '.credentials.json'), 'utf8'));
     const o = c.claudeAiOauth || {};

@@ -114,6 +114,54 @@ export function Icon({ name }: { name: IconName }): React.JSX.Element {
           <path d="M12 3a14 14 0 0 0 0 18" />
         </svg>
       )
+    case 'slider':
+      return (
+        <svg {...common} aria-hidden="true">
+          <line x1="4" y1="21" x2="4" y2="14" />
+          <line x1="4" y1="10" x2="4" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12" y2="3" />
+          <line x1="20" y1="21" x2="20" y2="16" />
+          <line x1="20" y1="12" x2="20" y2="3" />
+          <line x1="1" y1="14" x2="7" y2="14" />
+          <line x1="9" y1="8" x2="15" y2="8" />
+          <line x1="17" y1="16" x2="23" y2="16" />
+        </svg>
+      )
+    case 'bell':
+      return (
+        <svg {...common} aria-hidden="true">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+      )
+    case 'battery':
+      return (
+        <svg {...common} aria-hidden="true">
+          <rect x="2" y="7" width="16" height="10" rx="2" ry="2" />
+          <line x1="22" y1="11" x2="22" y2="13" />
+        </svg>
+      )
+    case 'arrow-up':
+      return (
+        <svg {...common} aria-hidden="true">
+          <line x1="12" y1="19" x2="12" y2="5" />
+          <polyline points="5 12 12 5 19 12" />
+        </svg>
+      )
+    case 'arrow-down':
+      return (
+        <svg {...common} aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <polyline points="19 12 12 19 5 12" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg {...common} aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )
     case 'github':
       return (
         <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">

@@ -24,6 +24,12 @@ const api: DashboardApi = {
   openRepo: () => ipcRenderer.invoke('app:openRepo'),
   renderNow: () => ipcRenderer.invoke('render:now'),
   saveConfig: (config: DashboardConfigInput) => ipcRenderer.invoke('config:save', config),
+  getWidgets: () => ipcRenderer.invoke('widgets:get'),
+  saveWidgets: (activeWidgets: string[]) => ipcRenderer.invoke('widgets:save', activeWidgets),
+  getNotification: () => ipcRenderer.invoke('notify:get'),
+  sendNotification: (message: string, durationSec?: number) => ipcRenderer.invoke('notify:set', message, durationSec),
+  clearNotification: () => ipcRenderer.invoke('notify:clear'),
+  getKindleLive: () => ipcRenderer.invoke('kindle:live'),
   quit: () => ipcRenderer.invoke('app:quit'),
   onOpenPanel: (callback) => {
     const listener = (): void => {
@@ -38,6 +44,20 @@ const api: DashboardApi = {
     }
     ipcRenderer.on('settings:open', listener)
     return () => ipcRenderer.removeListener('settings:open', listener)
+  },
+  onOpenWidgets: (callback) => {
+    const listener = (): void => {
+      callback()
+    }
+    ipcRenderer.on('widgets:open', listener)
+    return () => ipcRenderer.removeListener('widgets:open', listener)
+  },
+  onOpenNotify: (callback) => {
+    const listener = (): void => {
+      callback()
+    }
+    ipcRenderer.on('notify:open', listener)
+    return () => ipcRenderer.removeListener('notify:open', listener)
   },
   onPipChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, enabled: boolean): void => {

@@ -1,5 +1,5 @@
 export type BackendState = 'checking' | 'online' | 'offline'
-export type NavKey = 'painel' | 'kindle' | 'logins' | 'configuracoes'
+export type NavKey = 'painel' | 'widgets' | 'notificacoes' | 'kindle' | 'logins' | 'configuracoes'
 export type KindleTab = 'config' | 'diagnostico'
 export type KindleScriptAction = 'start' | 'stop'
 
@@ -18,6 +18,12 @@ export type IconName =
   | 'search'
   | 'github'
   | 'globe'
+  | 'slider'
+  | 'bell'
+  | 'battery'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'check'
 
 export interface NavItem {
   key: NavKey

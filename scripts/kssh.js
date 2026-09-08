@@ -19,21 +19,36 @@ function shellQuote(value) {
 
 function connectionConfig(options = {}) {
   const env = options.env || process.env;
-  return {
+  const cfg = {
     host: options.host || env.KINDLE_IP || '',
     port: Number.parseInt(String(options.port || env.KINDLE_PORT || '22'), 10),
-    username: options.username || env.KINDLE_USER || '',
-    password: options.password || env.KINDLE_PW || '',
+    username: options.username || env.KINDLE_USER || 'root',
     readyTimeout: options.readyTimeout || 12000,
     keepaliveInterval: options.keepaliveInterval || 5000,
   };
+  if (options.password || env.KINDLE_PW) {
+    cfg.password = options.password || env.KINDLE_PW;
+  } else if (process.env.SSH_AUTH_SOCK) {
+    cfg.agent = process.env.SSH_AUTH_SOCK;
+  } else {
+    const keyPaths = [
+      env.KINDLE_KEY,
+      path.join(require('os').homedir(), '.ssh', 'id_ed25519'),
+      path.join(require('os').homedir(), '.ssh', 'id_rsa'),
+    ].filter(Boolean);
+    const keyFile = keyPaths.find((p) => fs.existsSync(p));
+    if (keyFile) {
+      cfg.privateKey = fs.readFileSync(keyFile);
+    }
+  }
+  return cfg;
 }
 
 function assertConnectionConfig(config) {
   if (!config.host) throw new Error('KINDLE_IP is required');
   if (!Number.isInteger(config.port) || config.port <= 0) throw new Error('KINDLE_PORT is invalid');
   if (!config.username) throw new Error('KINDLE_USER is required');
-  if (!config.password) throw new Error('KINDLE_PW is required');
+  if (!config.password && !config.privateKey && !config.agent) throw new Error('KINDLE_PW or SSH key is required');
 }
 
 function connect(options = {}) {
@@ -87,8 +102,12 @@ function execCommand(client, command, options = {}) {
       if (stdin) {
         stdin.once('error', reject);
         stdin.pipe(stream);
+        stdin.once('end', () => {
+          stream.end();
+        });
+      } else {
+        stream.end();
       }
-      else stream.end();
     });
   });
 }

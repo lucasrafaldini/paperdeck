@@ -14,6 +14,24 @@ const preflight = require('./preflight');
 
 const PORT = parseInt(process.env.PORT || '8787', 10);
 const LOCALES_DIR = path.resolve(__dirname, '..', 'locales');
+const configMgr = require('./config');
+
+const KINDLE_STATUS_FILE = path.join(__dirname, '..', 'out', 'kindle-status.json');
+let kindleStatus = { battery: null, isCharging: false, lastSeen: null, clientIp: null };
+try {
+  if (fs.existsSync(KINDLE_STATUS_FILE)) {
+    kindleStatus = { ...kindleStatus, ...JSON.parse(fs.readFileSync(KINDLE_STATUS_FILE, 'utf8')) };
+  }
+} catch {}
+
+function saveKindleStatus() {
+  try {
+    fs.mkdirSync(path.dirname(KINDLE_STATUS_FILE), { recursive: true });
+    fs.writeFileSync(KINDLE_STATUS_FILE, JSON.stringify(kindleStatus), 'utf8');
+  } catch {}
+}
+
+let activeNotification = null;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -90,7 +108,9 @@ function createServer(deps = {}) {
 
   return http.createServer((req, res) => {
     const requestUrl = req.url || '/';
-    const url = requestUrl.split('?')[0];
+    const [url] = requestUrl.split('?');
+    const clientIp = req.socket.remoteAddress?.replace(/^.*:/, '') || req.socket.remoteAddress;
+    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${url} from ${clientIp}`);
     if (req.method === 'OPTIONS') return send(res, 204, '');
 
     if (url === '/api/ping') {
@@ -111,11 +131,93 @@ function createServer(deps = {}) {
         .then((data) => send(res, 200, JSON.stringify(data), { 'Content-Type': MIME['.json'] }))
         .catch((error) => send(res, 500, JSON.stringify({ error: String(error) }), { 'Content-Type': MIME['.json'] }));
     }
+    if (url === '/api/kindle') {
+      return send(res, 200, JSON.stringify(kindleStatus), { 'Content-Type': MIME['.json'] });
+    }
+    if (url === '/api/config') {
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', (c) => { body += c; });
+        req.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            const next = configMgr.writeConfig(parsed);
+            send(res, 200, JSON.stringify(next), { 'Content-Type': MIME['.json'] });
+          } catch (e) {
+            send(res, 400, JSON.stringify({ error: String(e.message || e) }), { 'Content-Type': MIME['.json'] });
+          }
+        });
+        return;
+      }
+      return send(res, 200, JSON.stringify(configMgr.readConfig()), { 'Content-Type': MIME['.json'] });
+    }
+    if (url === '/api/notify') {
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', (c) => { body += c; });
+        req.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            const msg = String(parsed.message || '').trim();
+            const durationSec = Number.parseInt(parsed.durationSec || '300', 10);
+            if (!msg) {
+              activeNotification = null;
+            } else {
+              activeNotification = {
+                message: msg,
+                expiresAt: Date.now() + (durationSec * 1000),
+                createdAt: new Date().toISOString(),
+              };
+            }
+            send(res, 200, JSON.stringify({ ok: true, notification: activeNotification }), { 'Content-Type': MIME['.json'] });
+          } catch (e) {
+            send(res, 400, JSON.stringify({ error: String(e.message || e) }), { 'Content-Type': MIME['.json'] });
+          }
+        });
+        return;
+      }
+      if (req.method === 'DELETE') {
+        activeNotification = null;
+        return send(res, 200, JSON.stringify({ ok: true }), { 'Content-Type': MIME['.json'] });
+      }
+      if (activeNotification && activeNotification.expiresAt && Date.now() > activeNotification.expiresAt) {
+        activeNotification = null;
+      }
+      return send(res, 200, JSON.stringify({ notification: activeNotification }), { 'Content-Type': MIME['.json'] });
+    }
     if (url === '/render') {
-      return fs.readFile(path.join(__dirname, '..', 'render', 'dashboard.html'), (error, data) =>
-        error ? send(res, 404, 'no render') : send(res, 200, data, { 'Content-Type': MIME['.html'] }));
+      return fs.readFile(path.join(__dirname, '..', 'render', 'dashboard.html'), 'utf8', (error, html) => {
+        if (error) return send(res, 404, 'no render');
+        const lang = new URLSearchParams(requestUrl.split('?')[1] || '').get('lang') || 'en';
+        const localeData = readLocaleI18n(lang);
+        if (activeNotification && activeNotification.expiresAt && Date.now() > activeNotification.expiresAt) {
+          activeNotification = null;
+        }
+        return collectAll()
+          .then((data) => {
+            const payload = {
+              ...data,
+              kindleStatus,
+              notification: activeNotification ? activeNotification.message : null,
+            };
+            const script = `<script>window.__INITIAL_DATA__ = ${JSON.stringify(payload)}; window.__INITIAL_I18N__ = ${JSON.stringify(localeData)};</script>`;
+            send(res, 200, html.replace('<!--__INJECT__-->', script), { 'Content-Type': MIME['.html'] });
+          })
+          .catch(() => {
+            send(res, 200, html, { 'Content-Type': MIME['.html'] });
+          });
+      });
     }
     if (url === '/dash.png') {
+      const q = new URLSearchParams(requestUrl.split('?')[1] || '');
+      const bat = q.get('bat');
+      if (bat !== null && bat !== '') {
+        kindleStatus.battery = Number.parseInt(bat, 10);
+        kindleStatus.isCharging = q.get('chg') === '1';
+        kindleStatus.lastSeen = Date.now();
+        kindleStatus.clientIp = clientIp;
+        saveKindleStatus();
+      }
       return fs.readFile(dashImagePath, (error, data) =>
         error ? send(res, 404, 'no png') : send(res, 200, data, { 'Content-Type': MIME['.png'] }));
     }
@@ -163,6 +265,36 @@ function start() {
   return server;
 }
 
+function getKindleStatus() {
+  return { ...kindleStatus };
+}
+
+function setKindleStatus(patch) {
+  kindleStatus = { ...kindleStatus, ...patch };
+  saveKindleStatus();
+  return kindleStatus;
+}
+
+function getActiveNotification() {
+  if (activeNotification && activeNotification.expiresAt && Date.now() > activeNotification.expiresAt) {
+    activeNotification = null;
+  }
+  return activeNotification;
+}
+
+function setActiveNotification(notification) {
+  activeNotification = notification;
+  return activeNotification;
+}
+
 if (require.main === module) start();
 
-module.exports = { createServer, mockUsage, start };
+module.exports = {
+  createServer,
+  mockUsage,
+  start,
+  getKindleStatus,
+  setKindleStatus,
+  getActiveNotification,
+  setActiveNotification,
+};

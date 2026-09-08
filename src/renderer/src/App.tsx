@@ -11,14 +11,17 @@ import type {
 } from './types'
 import { KindleView } from './views/KindleView'
 import { LoginsView } from './views/LoginsView'
+import { NotifyView } from './views/NotifyView'
 import { PanelView } from './views/PanelView'
 import { SettingsView } from './views/SettingsView'
 import { Sidebar } from './views/Sidebar'
 import { Topbar } from './views/Topbar'
+import { WidgetsView } from './views/WidgetsView'
 import type {
   AuthLoginTool,
   AuthStatus,
   DashboardConfig,
+  KindleLiveInfo,
   KindleScriptStatus,
   KindleStatus,
   LanguagePreference,
@@ -32,6 +35,7 @@ export default function App(): React.JSX.Element {
   const [form, setForm] = useState<ConfigForm | null>(null)
   const [auth, setAuth] = useState<AuthStatus | null>(null)
   const [kindle, setKindle] = useState<KindleStatus | null>(null)
+  const [kindleLive, setKindleLive] = useState<KindleLiveInfo | null>(null)
   const [kindleScript, setKindleScript] = useState<KindleScriptStatus | null>(null)
   const [backendState, setBackendState] = useState<BackendState>('checking')
   const [lastRender, setLastRender] = useState<string | null>(null)
@@ -86,24 +90,34 @@ export default function App(): React.JSX.Element {
     let unsubscribeSettings = (): void => {}
     let unsubscribePanel = (): void => {}
     let unsubscribePip = (): void => {}
+    let unsubscribeWidgets = (): void => {}
+    let unsubscribeNotify = (): void => {}
+    let liveTimer: number | undefined
 
     async function hydrate(): Promise<void> {
       try {
-        const [runtimeInfo, savedConfig, authStatus] = await Promise.all([
+        const [runtimeInfo, savedConfig, authStatus, live] = await Promise.all([
           window.dashboard.getRuntimeInfo(),
           window.dashboard.getConfig(),
           window.dashboard.checkAuth(),
+          window.dashboard.getKindleLive().catch(() => null),
         ])
 
         setRuntime(runtimeInfo)
         setConfig(savedConfig)
         setForm(formFromConfig(savedConfig))
         setAuth(authStatus)
+        if (live) setKindleLive(live)
         setNav(savedConfig.setupComplete ? 'painel' : 'configuracoes')
         setLastRender(runtimeInfo.lastRender?.updatedAt ?? null)
         if (runtimeInfo.lastRender) setPreviewKey(Date.parse(runtimeInfo.lastRender.updatedAt) || Date.now())
         void checkBackend(runtimeInfo.baseUrl)
         timer = window.setInterval(() => void checkBackend(runtimeInfo.baseUrl), 5000)
+
+        const pollLive = (): void => {
+          window.dashboard.getKindleLive().then(setKindleLive).catch(() => {})
+        }
+        liveTimer = window.setInterval(pollLive, 6000)
       } catch (hydrateError) {
         setBackendState('offline')
         showError('configuracoes', hydrateError instanceof Error ? hydrateError.message : String(hydrateError))
@@ -124,15 +138,24 @@ export default function App(): React.JSX.Element {
     unsubscribePanel = window.dashboard.onOpenPanel(() => {
       setNav(configured ? 'painel' : 'configuracoes')
     })
+    unsubscribeWidgets = window.dashboard.onOpenWidgets(() => {
+      setNav('widgets')
+    })
+    unsubscribeNotify = window.dashboard.onOpenNotify(() => {
+      setNav('notificacoes')
+    })
     unsubscribePip = window.dashboard.onPipChanged((enabled) => {
       setConfig((current) => current ? { ...current, pictureInPicture: enabled } : current)
     })
 
     return () => {
       if (timer) window.clearInterval(timer)
+      if (liveTimer) window.clearInterval(liveTimer)
       unsubscribeRender()
       unsubscribeSettings()
       unsubscribePanel()
+      unsubscribeWidgets()
+      unsubscribeNotify()
       unsubscribePip()
     }
   }, [checkBackend, configured])
@@ -155,6 +178,8 @@ export default function App(): React.JSX.Element {
 
   const navItems = useMemo<NavItem[]>(() => [
     { key: 'painel', label: t('menuDashboard'), hint: t('hintDashboard'), icon: 'book' },
+    { key: 'widgets', label: t('menuWidgets'), hint: t('hintWidgets'), icon: 'slider' },
+    { key: 'notificacoes', label: t('menuNotify'), hint: t('hintNotify'), icon: 'bell' },
     { key: 'kindle', label: t('menuKindle'), hint: t('hintKindle'), icon: 'kindle' },
     { key: 'logins', label: t('menuLogins'), hint: t('hintLogins'), icon: 'login' },
     { key: 'configuracoes', label: t('menuSettings'), hint: t('hintSettings'), icon: 'settings' },
@@ -391,7 +416,30 @@ export default function App(): React.JSX.Element {
           ) : null}
 
           {nav === 'painel' ? (
-            <PanelView baseUrl={runtime?.baseUrl} language={activeLanguage} previewKey={previewKey} t={t} />
+            <PanelView
+              baseUrl={runtime?.baseUrl}
+              kindleLive={kindleLive}
+              language={activeLanguage}
+              onNav={setNav}
+              previewKey={previewKey}
+              t={t}
+            />
+          ) : null}
+
+          {nav === 'widgets' ? (
+            <WidgetsView
+              onSaved={(msg) => showMessage('widgets', msg)}
+              onError={(err) => showError('widgets', err)}
+              t={t}
+            />
+          ) : null}
+
+          {nav === 'notificacoes' ? (
+            <NotifyView
+              onSaved={(msg) => showMessage('notificacoes', msg)}
+              onError={(err) => showError('notificacoes', err)}
+              t={t}
+            />
           ) : null}
 
           {nav === 'configuracoes' ? (

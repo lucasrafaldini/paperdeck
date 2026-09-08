@@ -1,10 +1,14 @@
+import { join } from 'node:path'
 import { app, ipcMain, shell } from 'electron'
 import type {
+  ActiveNotification,
   AuthLoginTool,
   AuthStatus,
   DashboardConfig,
   DashboardConfigInput,
+  DashboardWidgetsConfig,
   KindleInstallResult,
+  KindleLiveInfo,
   KindleScriptStatus,
   KindleStatus,
   LanguagePreference,
@@ -99,6 +103,85 @@ export function registerIpc(handlers: IpcHandlers): void {
   ipcMain.handle('kindle:script-status', (): Promise<KindleScriptStatus> => manageKindleScript('status'))
   ipcMain.handle('kindle:script-start', (): Promise<KindleScriptStatus> => manageKindleScript('start'))
   ipcMain.handle('kindle:script-stop', (): Promise<KindleScriptStatus> => manageKindleScript('stop'))
+
+  ipcMain.handle('widgets:get', async (): Promise<DashboardWidgetsConfig> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/config`, { signal: AbortSignal.timeout(3000) })
+      if (res.ok) return (await res.json()) as DashboardWidgetsConfig
+    } catch {}
+    const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+    const configMgr = require(join(root, 'backend', 'config.js')) as { readConfig: () => DashboardWidgetsConfig }
+    return configMgr.readConfig()
+  })
+
+  ipcMain.handle('widgets:save', async (_event, activeWidgets: string[]): Promise<DashboardWidgetsConfig> => {
+    let result: DashboardWidgetsConfig
+    try {
+      const res = await fetch(`${BASE_URL}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeWidgets }),
+        signal: AbortSignal.timeout(3000),
+      })
+      if (res.ok) {
+        result = (await res.json()) as DashboardWidgetsConfig
+      } else {
+        throw new Error('failed')
+      }
+    } catch {
+      const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+      const configMgr = require(join(root, 'backend', 'config.js')) as { writeConfig: (patch: unknown) => DashboardWidgetsConfig }
+      result = configMgr.writeConfig({ activeWidgets })
+    }
+    void renderDashboard().catch(() => {})
+    return result
+  })
+
+  ipcMain.handle('notify:get', async (): Promise<ActiveNotification | null> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/notify`, { signal: AbortSignal.timeout(3000) })
+      if (res.ok) {
+        const data = (await res.json()) as { notification: ActiveNotification | null }
+        return data.notification
+      }
+    } catch {}
+    return null
+  })
+
+  ipcMain.handle('notify:set', async (_event, message: string, durationSec?: number): Promise<ActiveNotification | null> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, durationSec: durationSec || 300 }),
+        signal: AbortSignal.timeout(3000),
+      })
+      if (res.ok) {
+        const data = (await res.json()) as { notification: ActiveNotification | null }
+        void renderDashboard().catch(() => {})
+        return data.notification
+      }
+    } catch {}
+    return null
+  })
+
+  ipcMain.handle('notify:clear', async (): Promise<void> => {
+    try {
+      await fetch(`${BASE_URL}/api/notify`, {
+        method: 'DELETE',
+        signal: AbortSignal.timeout(3000),
+      })
+      void renderDashboard().catch(() => {})
+    } catch {}
+  })
+
+  ipcMain.handle('kindle:live', async (): Promise<KindleLiveInfo> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/kindle`, { signal: AbortSignal.timeout(3000) })
+      if (res.ok) return (await res.json()) as KindleLiveInfo
+    } catch {}
+    return { battery: null, isCharging: false, lastSeen: null, clientIp: null }
+  })
 
   ipcMain.handle('render:now', () => renderDashboard())
   ipcMain.handle('app:quit', () => {

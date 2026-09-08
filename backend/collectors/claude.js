@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 
 const CREDS = path.join(os.homedir(), '.claude', '.credentials.json');
+const DESKTOP_HISTORY = path.join(os.homedir(), 'Library', 'Application Support', 'Claude', 'plan-usage-history.json');
 const URL = 'https://api.anthropic.com/api/oauth/usage';
 const UA = process.env.CLAUDE_UA || 'claude-cli/1.0.0 (external, cli)';
 const MIN_INTERVAL = 180000;
@@ -15,7 +16,34 @@ const STALE_NOTE_KEY = 'claudeStale';
 let cache = { at: 0, data: null };
 let lastAttempt = 0; // gate: nunca bate no endpoint mais de 1x/MIN_INTERVAL (mesmo em erro → evita 429)
 
+function readDesktopHistory() {
+  if (!fs.existsSync(DESKTOP_HISTORY)) return null;
+  try {
+    const raw = fs.readFileSync(DESKTOP_HISTORY, 'utf8');
+    const parsed = JSON.parse(raw);
+    const samples = Array.isArray(parsed.samples) ? parsed.samples : [];
+    if (!samples.length) return null;
+    const last = samples[samples.length - 1];
+    if (!last || !last.u) return null;
+    return {
+      tool: 'claude',
+      label: 'Claude',
+      windows: [
+        { name: '5h', pct: Number(last.u.fh || 0) },
+        { name: '7d', pct: Number(last.u.sd || 0) }
+      ],
+      confidence: 'live',
+      updatedAt: new Date(last.t || Date.now()).toISOString()
+    };
+  } catch {
+    return null;
+  }
+}
+
 function readToken() {
+  if (!fs.existsSync(CREDS)) {
+    throw new Error('Não autenticado: execute `claude` no Mac');
+  }
   const c = JSON.parse(fs.readFileSync(CREDS, 'utf8'));
   if (!c.claudeAiOauth || !c.claudeAiOauth.accessToken) throw new Error('sem accessToken');
   return c.claudeAiOauth.accessToken;
@@ -72,6 +100,11 @@ async function collect() {
     return { tool: 'claude', label: 'Claude Code', windows: [], confidence: 'cooldown',
              error: 'aguardando intervalo (≥180s) antes de tentar de novo' };
   }
+  const desktop = readDesktopHistory();
+  if (desktop && !fs.existsSync(CREDS)) {
+    return desktop;
+  }
+
   lastAttempt = now;
   try {
     const token = readToken();

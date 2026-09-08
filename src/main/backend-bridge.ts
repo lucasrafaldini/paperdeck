@@ -50,7 +50,8 @@ export interface KindleAutostartModule {
 let backendServer: Server | null = null
 
 function loadModule<T>(...segments: string[]): T {
-  return require(join(app.getAppPath(), ...segments)) as T
+  const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+  return require(join(root, ...segments)) as T
 }
 
 export function backendModule(): BackendModule {

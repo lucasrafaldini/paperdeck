@@ -92,6 +92,29 @@ export interface KindleInstallResult {
   status: KindleScriptStatus
 }
 
+export interface WidgetItem {
+  id: string
+  name: string
+}
+
+export interface DashboardWidgetsConfig {
+  activeWidgets: string[]
+  availableWidgets: WidgetItem[]
+}
+
+export interface ActiveNotification {
+  message: string
+  expiresAt: number
+  createdAt: string
+}
+
+export interface KindleLiveInfo {
+  battery: number | null
+  isCharging: boolean
+  lastSeen: number | null
+  clientIp: string | null
+}
+
 export interface DashboardApi {
   checkAuth: () => Promise<AuthStatus>
   checkKindle: () => Promise<KindleStatus>
@@ -109,9 +132,17 @@ export interface DashboardApi {
   openRepo: () => Promise<void>
   renderNow: () => Promise<RenderResult>
   saveConfig: (config: DashboardConfigInput) => Promise<DashboardConfig>
+  getWidgets: () => Promise<DashboardWidgetsConfig>
+  saveWidgets: (activeWidgets: string[]) => Promise<DashboardWidgetsConfig>
+  getNotification: () => Promise<ActiveNotification | null>
+  sendNotification: (message: string, durationSec?: number) => Promise<ActiveNotification | null>
+  clearNotification: () => Promise<void>
+  getKindleLive: () => Promise<KindleLiveInfo>
   quit: () => Promise<void>
   onOpenPanel: (callback: () => void) => () => void
   onOpenSettings: (callback: () => void) => () => void
+  onOpenWidgets: (callback: () => void) => () => void
+  onOpenNotify: (callback: () => void) => () => void
   onPipChanged: (callback: (enabled: boolean) => void) => () => void
   onRenderCompleted: (callback: (result: RenderResult) => void) => () => void
 }

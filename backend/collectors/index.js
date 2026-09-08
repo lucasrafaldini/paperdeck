@@ -1,19 +1,38 @@
-// Orquestrador dos coletores — roda os coletores em paralelo, isolados:
-// se um falhar, os outros seguem. Devolve o formato normalizado consumido pela render.
-// OpenCode desativado: plano Go não expõe API de saldo/uso — sem dado confiável p/ o dashboard.
-// O coletor `./opencode` segue no repo, só não é mais chamado aqui.
+// Orquestrador dos coletores — roda os coletores em paralelo, isolados.
+// Coleta apenas os coletores ativos conforme backend/config.js.
 const claude = require('./claude');
+const omnirouter = require('./omnirouter');
 const codex = require('./codex');
+const applemusic = require('./applemusic');
+const antigravity = require('./antigravity');
+const chaosmachine = require('./chaosmachine');
+const { readConfig } = require('../config');
 
-const LABELS = ['claude', 'codex'];
+const REGISTRY = {
+  claude,
+  omnirouter,
+  codex,
+  applemusic,
+  antigravity,
+  chaosmachine,
+};
 
-async function collectAll() {
-  const results = await Promise.allSettled([claude.collect(), codex.collect()]);
+async function collectAll(requestedWidgets) {
+  const config = readConfig();
+  const active = Array.isArray(requestedWidgets) && requestedWidgets.length > 0
+    ? requestedWidgets
+    : (config.activeWidgets || ['claude', 'omnirouter']);
+
+  const entries = active.map((id) => ({ id, collector: REGISTRY[id] })).filter((e) => e.collector);
+
+  const results = await Promise.allSettled(entries.map((e) => e.collector.collect()));
   const tools = results.map((r, i) => {
+    const id = entries[i].id;
     if (r.status === 'fulfilled') return r.value;
-    return { tool: LABELS[i], label: LABELS[i], confidence: 'error', error: String(r.reason) };
+    return { tool: id, label: id, confidence: 'error', error: String(r.reason) };
   });
+
   return { updatedAt: new Date().toISOString(), source: 'live', tools };
 }
 
-module.exports = { collectAll };
+module.exports = { collectAll, REGISTRY };
