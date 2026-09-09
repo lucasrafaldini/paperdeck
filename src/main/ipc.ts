@@ -4,6 +4,7 @@ import type {
   ActiveNotification,
   AuthLoginTool,
   AuthStatus,
+  CustomSite,
   DashboardConfig,
   DashboardConfigInput,
   DashboardLayoutConfig,
@@ -163,13 +164,46 @@ export function registerIpc(handlers: IpcHandlers): void {
     return result
   })
 
-  ipcMain.handle('widgets:saveLayout', async (_event, layout: DashboardLayoutConfig): Promise<DashboardWidgetsConfig> => {
+  ipcMain.handle(
+    'widgets:saveLayout',
+    async (
+      _event,
+      layout: DashboardLayoutConfig,
+      extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[] },
+    ): Promise<DashboardWidgetsConfig> => {
+      let result: DashboardWidgetsConfig
+      const payload = { layout, ...(extra || {}) }
+      try {
+        const res = await fetch(`${BASE_URL}/api/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(3000),
+        })
+        if (res.ok) {
+          result = (await res.json()) as DashboardWidgetsConfig
+        } else {
+          throw new Error('failed')
+        }
+      } catch {
+        const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+        const configMgr = require(join(root, 'backend', 'config.js')) as {
+          writeConfig: (patch: unknown) => DashboardWidgetsConfig
+        }
+        result = configMgr.writeConfig(payload)
+      }
+      void renderDashboard().catch(() => {})
+      return result
+    },
+  )
+
+  ipcMain.handle('widgets:saveCustomSites', async (_event, customSites: CustomSite[]): Promise<DashboardWidgetsConfig> => {
     let result: DashboardWidgetsConfig
     try {
       const res = await fetch(`${BASE_URL}/api/config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ layout }),
+        body: JSON.stringify({ customSites }),
         signal: AbortSignal.timeout(3000),
       })
       if (res.ok) {
@@ -179,11 +213,36 @@ export function registerIpc(handlers: IpcHandlers): void {
       }
     } catch {
       const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
-      const configMgr = require(join(root, 'backend', 'config.js')) as { writeConfig: (patch: unknown) => DashboardWidgetsConfig }
-      result = configMgr.writeConfig({ layout })
+      const configMgr = require(join(root, 'backend', 'config.js')) as {
+        writeConfig: (patch: unknown) => DashboardWidgetsConfig
+      }
+      result = configMgr.writeConfig({ customSites })
     }
     void renderDashboard().catch(() => {})
     return result
+  })
+
+  ipcMain.handle('tamagotchi:action', async (_event, action: 'feed' | 'pet' | 'play'): Promise<unknown> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/tamagotchi/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+        signal: AbortSignal.timeout(3000),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        void renderDashboard().catch(() => {})
+        return data
+      }
+    } catch {}
+    const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+    const tamagotchiCollector = require(join(root, 'backend', 'collectors', 'tamagotchi.js')) as {
+      performAction: (act: string) => unknown
+    }
+    const res = tamagotchiCollector.performAction(action)
+    void renderDashboard().catch(() => {})
+    return res
   })
 
   ipcMain.handle('notify:get', async (): Promise<ActiveNotification | null> => {

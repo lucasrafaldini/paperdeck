@@ -53,9 +53,14 @@ const DEFAULT_WIDGET_OPTIONS = {
     progressBar: true,
     album: true,
   },
-  codex: {
-    limits: true,
-    spend: true,
+  tamagotchi: {
+    showSprite: true,
+    showBars: true,
+    showStatus: true,
+  },
+  sitescraper: {
+    showDate: true,
+    maxItems: 3,
   },
 };
 
@@ -64,6 +69,8 @@ const AVAILABLE_WIDGETS = [
   { id: 'omnirouter', name: 'Omni Router' },
   { id: 'antigravity', name: 'Antigravity AI' },
   { id: 'macstats', name: 'Mac System Stats' },
+  { id: 'tamagotchi', name: 'Mascote Virtual (Tamagotchi)' },
+  { id: 'sitescraper', name: 'Monitor de Sites (Web Scraper / RSS)' },
   { id: 'applemusic', name: 'Apple Music' },
   { id: 'chaosmachine', name: 'Chaos Machine (Linux)' },
   { id: 'codex', name: 'OpenAI Codex' },
@@ -73,6 +80,7 @@ const DEFAULT_CONFIG = {
   activeWidgets: ['claude', 'antigravity', 'omnirouter'],
   availableWidgets: AVAILABLE_WIDGETS,
   widgetOptions: DEFAULT_WIDGET_OPTIONS,
+  customSites: [],
   layout: {
     mode: 'preset',
     blocks: [
@@ -97,6 +105,7 @@ function readConfig() {
           ...DEFAULT_WIDGET_OPTIONS,
           ...(parsed.widgetOptions || {}),
         },
+        customSites: Array.isArray(parsed.customSites) ? parsed.customSites : [],
         layout: parsed.layout || DEFAULT_CONFIG.layout,
         scheduledNotifications: Array.isArray(parsed.scheduledNotifications) ? parsed.scheduledNotifications : [],
       };
@@ -121,6 +130,7 @@ function writeConfig(patch) {
 module.exports = {
   readConfig,
   writeConfig,
+  getDataDir,
   DEFAULT_WIDGET_OPTIONS,
   AVAILABLE_WIDGETS,
 };

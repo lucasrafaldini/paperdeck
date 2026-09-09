@@ -189,6 +189,27 @@ function createServer(deps = {}) {
       }
       return send(res, 200, JSON.stringify(configMgr.readConfig()), { 'Content-Type': MIME['.json'] });
     }
+    if (url === '/api/tamagotchi/action') {
+      if (req.method === 'POST') {
+        let body = '';
+        req.on('data', (c) => { body += c; });
+        req.on('end', () => {
+          try {
+            const parsed = JSON.parse(body || '{}');
+            const tamagotchiCollector = require('./collectors/tamagotchi');
+            const updated = tamagotchiCollector.performAction(parsed.action);
+            send(res, 200, JSON.stringify({ ok: true, pet: updated }), { 'Content-Type': MIME['.json'] });
+          } catch (e) {
+            send(res, 400, JSON.stringify({ error: String(e.message || e) }), { 'Content-Type': MIME['.json'] });
+          }
+        });
+        return;
+      }
+      const tamagotchiCollector = require('./collectors/tamagotchi');
+      return tamagotchiCollector.collect().then((pet) => {
+        send(res, 200, JSON.stringify(pet), { 'Content-Type': MIME['.json'] });
+      });
+    }
     if (url === '/api/notify') {
       if (req.method === 'POST') {
         let body = '';

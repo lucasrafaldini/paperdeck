@@ -115,12 +115,19 @@ export interface WidgetItem {
 
 export type WidgetOptionsMap = Record<string, Record<string, boolean>>
 
+export interface CustomSite {
+  id: string
+  name: string
+  url: string
+}
+
 export interface DashboardBlock {
   id: string
   tool: string
   width: 'half' | 'full'
   height?: 'compact' | 'standard' | 'tall'
   options?: Record<string, boolean>
+  siteId?: string
 }
 
 export interface DashboardLayoutConfig {
@@ -133,6 +140,7 @@ export interface DashboardWidgetsConfig {
   availableWidgets: WidgetItem[]
   widgetOptions?: WidgetOptionsMap
   layout?: DashboardLayoutConfig
+  customSites?: CustomSite[]
 }
 
 export interface ActiveNotification {
@@ -182,7 +190,9 @@ export interface DashboardApi {
   getWidgets: () => Promise<DashboardWidgetsConfig>
   saveWidgets: (activeWidgets: string[]) => Promise<DashboardWidgetsConfig>
   saveWidgetOptions: (widgetOptions: WidgetOptionsMap) => Promise<DashboardWidgetsConfig>
-  saveLayout: (layout: DashboardLayoutConfig) => Promise<DashboardWidgetsConfig>
+  saveLayout: (layout: DashboardLayoutConfig, extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[] }) => Promise<DashboardWidgetsConfig>
+  saveCustomSites: (sites: CustomSite[]) => Promise<DashboardWidgetsConfig>
+  petAction: (action: 'feed' | 'pet' | 'play') => Promise<unknown>
   getNotification: () => Promise<ActiveNotification | null>
   sendNotification: (message: string, durationSec?: number) => Promise<ActiveNotification | null>
   clearNotification: () => Promise<void>

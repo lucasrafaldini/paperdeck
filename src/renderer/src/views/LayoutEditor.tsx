@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import type { DashboardBlock, DashboardLayoutConfig, DashboardWidgetsConfig, WidgetOptionsMap } from '../../../shared/types'
+import { useEffect, useRef, useState } from 'react'
+import type { CustomSite, DashboardBlock, DashboardLayoutConfig, DashboardWidgetsConfig, WidgetOptionsMap } from '../../../shared/types'
 import { ActionButton } from '../components/ActionButton'
 import { Icon } from '../components/Icon'
 import type { Translator } from '../i18n'
@@ -13,9 +13,11 @@ interface LayoutEditorProps {
 
 const WIDGET_META: Record<string, { name: string; icon: string; desc: string }> = {
   claude: { name: 'Claude', icon: '🤖', desc: 'Uso 5h e 7d' },
-  omnirouter: { name: 'Omni Router', icon: '🌐', desc: 'Tokens, custo e modelos' },
   antigravity: { name: 'Antigravity AI', icon: '🧠', desc: 'Cota 5h/7d e Brain' },
   macstats: { name: 'Mac Stats', icon: '💻', desc: 'CPU, RAM, Disco e Uptime' },
+  tamagotchi: { name: 'Mascote (Tamagotchi)', icon: '🐱', desc: 'Bichinho virtual para cuidar' },
+  sitescraper: { name: 'Monitor de Sites', icon: '🌐', desc: 'Últimos conteúdos e posts' },
+  omnirouter: { name: 'Omni Router', icon: '🌐', desc: 'Tokens, custo e modelos' },
   applemusic: { name: 'Apple Music', icon: '🎵', desc: 'Faixa e progresso' },
   chaosmachine: { name: 'Chaos Machine', icon: '🖥️', desc: 'Servidor Linux remoto' },
   codex: { name: 'OpenAI Codex', icon: '⚡', desc: 'Créditos e sessões' },
@@ -36,18 +38,26 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'statsGrid', label: 'Grid conversas/projetos/passos', default: true },
     { id: 'historyChart', label: 'Série histórica passos', default: false },
   ],
-  omnirouter: [
-    { id: 'statGrid', label: 'Totais tokens/custo/reqs/provedores', default: true },
-    { id: 'topModels', label: 'Lista dos modelos mais usados', default: true },
-    { id: 'pieChart', label: 'Gráfico pizza de distribuição', default: false },
-    { id: 'historyChart', label: 'Gráfico histórico de uso', default: false },
-  ],
   macstats: [
     { id: 'cpuBar', label: 'Barra de CPU (%)', default: true },
     { id: 'ramBar', label: 'Barra de RAM (GB e %)', default: true },
     { id: 'diskBar', label: 'Barra de espaço em disco (/)', default: true },
     { id: 'uptime', label: 'Tempo de atividade (Uptime)', default: true },
     { id: 'sysInfo', label: 'Modelo Mac e sistema', default: true },
+  ],
+  tamagotchi: [
+    { id: 'showSprite', label: 'Exibir mascote em pixel art', default: true },
+    { id: 'showBars', label: 'Barras de fome, felicidade e energia', default: true },
+    { id: 'showStatus', label: 'Frase de humor e status do dia', default: true },
+  ],
+  sitescraper: [
+    { id: 'showDate', label: 'Exibir data de publicação', default: true },
+  ],
+  omnirouter: [
+    { id: 'statGrid', label: 'Totais tokens/custo/reqs/provedores', default: true },
+    { id: 'topModels', label: 'Lista dos modelos mais usados', default: true },
+    { id: 'pieChart', label: 'Gráfico pizza de distribuição', default: false },
+    { id: 'historyChart', label: 'Gráfico histórico de uso', default: false },
   ],
   chaosmachine: [
     { id: 'loadAvg', label: 'Load Average', default: true },
@@ -68,21 +78,29 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
 export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps): React.JSX.Element {
   const [blocks, setBlocks] = useState<DashboardBlock[]>([])
   const [widgetOptions, setWidgetOptions] = useState<WidgetOptionsMap>({})
+  const [customSites, setCustomSites] = useState<CustomSite[]>([])
+  const [newSiteName, setNewSiteName] = useState('')
+  const [newSiteUrl, setNewSiteUrl] = useState('')
+  const [petMsg, setPetMsg] = useState<string | null>(null)
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
 
   useEffect(() => {
     window.dashboard
       .getWidgets()
       .then((cfg: DashboardWidgetsConfig) => {
         setWidgetOptions(cfg.widgetOptions || {})
+        setCustomSites(cfg.customSites || [])
         if (cfg.layout && Array.isArray(cfg.layout.blocks) && cfg.layout.blocks.length > 0) {
           setBlocks(cfg.layout.blocks)
         } else {
           // Default blocks based on active widgets
-          const initialBlocks: DashboardBlock[] = (cfg.activeWidgets || ['claude', 'antigravity', 'omnirouter']).map(
+          const initialBlocks: DashboardBlock[] = (cfg.activeWidgets || ['claude', 'antigravity', 'macstats']).map(
             (tool, i) => ({
               id: `block_${tool}_${i}`,
               tool,
@@ -93,9 +111,9 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
           setBlocks(initialBlocks)
         }
       })
-      .catch((err) => onError(err instanceof Error ? err.message : String(err)))
+      .catch((err) => onErrorRef.current(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false))
-  }, [onError])
+  }, [])
 
   const handleDragStart = (index: number) => {
     setDraggedIdx(index)
@@ -149,6 +167,39 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
     })
   }
 
+  const handlePetAction = async (action: 'feed' | 'pet' | 'play') => {
+    try {
+      await window.dashboard.petAction(action)
+      const label =
+        action === 'feed'
+          ? 'Mascote alimentado! 🍖'
+          : action === 'pet'
+            ? 'Carinho recebido! ❤️'
+            : 'Mascote brincou com você! 🎾'
+      setPetMsg(label)
+      setTimeout(() => setPetMsg(null), 3500)
+    } catch (err) {
+      onErrorRef.current(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  const handleAddSite = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newSiteUrl.trim()) return
+    const newSite: CustomSite = {
+      id: 'site_' + Date.now(),
+      name: newSiteName.trim() || newSiteUrl.trim(),
+      url: newSiteUrl.trim(),
+    }
+    setCustomSites((prev) => [...prev, newSite])
+    setNewSiteName('')
+    setNewSiteUrl('')
+  }
+
+  const handleRemoveSite = (id: string) => {
+    setCustomSites((prev) => prev.filter((s) => s.id !== id))
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -157,14 +208,16 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
         mode: 'custom',
         blocks,
       }
-      await window.dashboard.saveWidgets(activeTools)
-      await window.dashboard.saveWidgetOptions(widgetOptions)
-      await window.dashboard.saveLayout(layoutCfg)
+      await window.dashboard.saveLayout(layoutCfg, {
+        activeWidgets: activeTools,
+        widgetOptions,
+        customSites,
+      })
       await window.dashboard.renderNow()
       onSaved('Layout salvo e enviado ao Kindle com sucesso!')
       if (onClose) onClose()
     } catch (err) {
-      onError(err instanceof Error ? err.message : String(err))
+      onErrorRef.current(err instanceof Error ? err.message : String(err))
     } finally {
       setSaving(false)
     }
@@ -174,7 +227,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
     const defaultBlocks: DashboardBlock[] = [
       { id: 'b_claude', tool: 'claude', width: 'half', height: 'standard' },
       { id: 'b_antigravity', tool: 'antigravity', width: 'half', height: 'standard' },
-      { id: 'b_omnirouter', tool: 'omnirouter', width: 'half', height: 'tall' },
+      { id: 'b_macstats', tool: 'macstats', width: 'half', height: 'tall' },
     ]
     setBlocks(defaultBlocks)
     setSelectedBlockId(null)
@@ -387,6 +440,24 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                     {block.tool === 'applemusic' && (
                       <div>▶ Música atual tocando · Álbum · Barra de progresso</div>
                     )}
+                    {block.tool === 'tamagotchi' && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ fontWeight: 'bold' }}>Pixel · Nível 3 · Feliz ✨</div>
+                          <div style={{ fontSize: '11px', opacity: 0.8 }}>Fome: 25% · Felicidade: 90% · Energia: 80%</div>
+                        </div>
+                        <div style={{ fontFamily: 'monospace', fontWeight: 'bold', background: '#eee', padding: '2px 6px', borderRadius: '4px' }}>
+                          (=^･ω･^=)
+                        </div>
+                      </div>
+                    )}
+                    {block.tool === 'sitescraper' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '12px' }}>🌐 Notícias & Blog</div>
+                        <div style={{ fontSize: '11px', opacity: 0.85 }}>• Novo release publicado (hoje)</div>
+                        <div style={{ fontSize: '11px', opacity: 0.85 }}>• Atualizações do sistema (ontem)</div>
+                      </div>
+                    )}
                     {block.tool === 'chaosmachine' && (
                       <div>● Online · Load: 0.15 · RAM: 420MB · Uptime: 12d</div>
                     )}
@@ -530,6 +601,113 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                     )
                   })}
                 </div>
+              </div>
+            )}
+
+            {selectedBlock.tool === 'tamagotchi' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line-2)', paddingTop: '10px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-soft)' }}>
+                  Cuidar do Mascote:
+                </label>
+                {petMsg && (
+                  <div style={{ fontSize: '12px', padding: '6px 8px', background: 'rgba(46, 204, 113, 0.15)', color: '#27ae60', borderRadius: '4px', fontWeight: 600 }}>
+                    {petMsg}
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="ui-button ghost"
+                    style={{ justifyContent: 'flex-start', minHeight: '32px', fontSize: '12px' }}
+                    onClick={() => void handlePetAction('feed')}
+                  >
+                    🍖 Alimentar (+comida)
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-button ghost"
+                    style={{ justifyContent: 'flex-start', minHeight: '32px', fontSize: '12px' }}
+                    onClick={() => void handlePetAction('pet')}
+                  >
+                    ❤️ Fazer Carinho (+felicidade)
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-button ghost"
+                    style={{ justifyContent: 'flex-start', minHeight: '32px', fontSize: '12px' }}
+                    onClick={() => void handlePetAction('play')}
+                  >
+                    🎾 Brincar (+diversão)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedBlock.tool === 'sitescraper' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--line-2)', paddingTop: '10px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-soft)' }}>
+                  Sites Cadastrados para Raspagem:
+                </label>
+                {customSites.length === 0 ? (
+                  <p style={{ fontSize: '11px', color: 'var(--text-soft)', margin: 0 }}>
+                    Nenhum site adicionado ainda. Adicione uma URL abaixo (suporta blogs, notícias e feeds RSS).
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {customSites.map((site) => (
+                      <div
+                        key={site.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '6px 8px',
+                          background: 'var(--panel-2)',
+                          border: '1px solid var(--line-2)',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <div style={{ overflow: 'hidden', marginRight: '6px' }}>
+                          <strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {site.name}
+                          </strong>
+                          <span style={{ fontSize: '10px', color: 'var(--text-soft)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {site.url}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSite(site.id)}
+                          style={{ border: 'none', background: 'transparent', color: '#cc0000', cursor: 'pointer', fontSize: '12px' }}
+                          title="Remover site"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddSite} style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--line-2)', paddingTop: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-soft)' }}>+ Adicionar Site</span>
+                  <input
+                    placeholder="Nome (ex.: Meu Blog)"
+                    value={newSiteName}
+                    onChange={(e) => setNewSiteName(e.target.value)}
+                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--line-2)' }}
+                  />
+                  <input
+                    placeholder="https://exemplo.com ou feed"
+                    value={newSiteUrl}
+                    onChange={(e) => setNewSiteUrl(e.target.value)}
+                    required
+                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--line-2)' }}
+                  />
+                  <ActionButton type="submit" icon="plus" className="compact" disabled={!newSiteUrl.trim()}>
+                    Adicionar Site
+                  </ActionButton>
+                </form>
               </div>
             )}
           </div>

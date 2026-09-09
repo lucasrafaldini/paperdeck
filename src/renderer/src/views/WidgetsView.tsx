@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DashboardWidgetsConfig, WidgetOptionsMap } from '../../../shared/types'
 import { ActionButton } from '../components/ActionButton'
 import { Icon } from '../components/Icon'
@@ -15,10 +15,6 @@ const WIDGET_DESCRIPTIONS: Record<string, { desc: string; icon: string }> = {
     desc: 'Uso da assinatura Claude Desktop / CLI (5h e 7d) com resets em tempo real.',
     icon: '🤖',
   },
-  omnirouter: {
-    desc: 'Roteamento multi-LLM (tokens, custo em USD, requisições e modelos mais usados).',
-    icon: '🌐',
-  },
   antigravity: {
     desc: 'Google DeepMind Antigravity AI, sessões ativas e projetos do Brain.',
     icon: '🧠',
@@ -26,6 +22,18 @@ const WIDGET_DESCRIPTIONS: Record<string, { desc: string; icon: string }> = {
   macstats: {
     desc: 'Métricas de hardware do macOS (Uso de CPU, Memória RAM, Disco e Uptime).',
     icon: '💻',
+  },
+  tamagotchi: {
+    desc: 'Mascote virtual (Tamagotchi) para cuidar no Kindle com fome, felicidade e energia.',
+    icon: '🐱',
+  },
+  sitescraper: {
+    desc: 'Monitor e leitor de manchetes recentes dos seus sites favoritos (via RSS ou Web Scraping).',
+    icon: '🌐',
+  },
+  omnirouter: {
+    desc: 'Roteamento multi-LLM (tokens, custo em USD, requisições e modelos mais usados).',
+    icon: '🌐',
   },
   applemusic: {
     desc: 'Música tocando no Mac, artista, álbum e barra de progresso.',
@@ -56,18 +64,26 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'statsGrid', label: 'Métricas de conversas, projetos e passos', default: true },
     { id: 'historyChart', label: 'Série histórica de passos de sessão', default: false },
   ],
-  omnirouter: [
-    { id: 'statGrid', label: 'Totais de tokens, custo USD, requisições e provedores', default: true },
-    { id: 'topModels', label: 'Lista dos modelos mais usados', default: true },
-    { id: 'pieChart', label: 'Gráfico pizza de distribuição por modelo', default: false },
-    { id: 'historyChart', label: 'Gráfico de histórico de uso (7d / 15d / 30d)', default: false },
-  ],
   macstats: [
     { id: 'cpuBar', label: 'Uso de CPU (%) com barra gráfica', default: true },
     { id: 'ramBar', label: 'Uso de Memória RAM (GB e %)', default: true },
     { id: 'diskBar', label: 'Espaço em disco raiz (/)', default: true },
     { id: 'uptime', label: 'Tempo de atividade (Uptime)', default: true },
     { id: 'sysInfo', label: 'Modelo do Mac e versão do macOS', default: true },
+  ],
+  tamagotchi: [
+    { id: 'showSprite', label: 'Exibir mascote em pixel art', default: true },
+    { id: 'showBars', label: 'Barras de fome, felicidade e energia', default: true },
+    { id: 'showStatus', label: 'Frase de humor e status do dia', default: true },
+  ],
+  sitescraper: [
+    { id: 'showDate', label: 'Exibir data das publicações', default: true },
+  ],
+  omnirouter: [
+    { id: 'statGrid', label: 'Totais de tokens, custo USD, requisições e provedores', default: true },
+    { id: 'topModels', label: 'Lista dos modelos mais usados', default: true },
+    { id: 'pieChart', label: 'Gráfico pizza de distribuição por modelo', default: false },
+    { id: 'historyChart', label: 'Gráfico de histórico de uso (7d / 15d / 30d)', default: false },
   ],
   chaosmachine: [
     { id: 'loadAvg', label: 'Load Average do processador', default: true },
@@ -93,6 +109,9 @@ export function WidgetsView({ onSaved, onError, t }: WidgetsViewProps): React.JS
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+
   useEffect(() => {
     let mounted = true
     window.dashboard
@@ -100,12 +119,12 @@ export function WidgetsView({ onSaved, onError, t }: WidgetsViewProps): React.JS
       .then((cfg) => {
         if (!mounted) return
         setConfig(cfg)
-        setActiveList(cfg.activeWidgets || ['claude', 'omnirouter'])
+        setActiveList(cfg.activeWidgets || ['claude', 'antigravity', 'macstats'])
         setOptions(cfg.widgetOptions || {})
       })
       .catch((err) => {
         if (!mounted) return
-        onError(err instanceof Error ? err.message : String(err))
+        onErrorRef.current(err instanceof Error ? err.message : String(err))
       })
       .finally(() => {
         if (mounted) setLoading(false)
@@ -114,7 +133,7 @@ export function WidgetsView({ onSaved, onError, t }: WidgetsViewProps): React.JS
     return () => {
       mounted = false
     }
-  }, [onError])
+  }, [])
 
   const toggleWidget = (id: string): void => {
     setActiveList((current) => {

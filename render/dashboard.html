@@ -477,6 +477,81 @@
       return h + '</div>';
     }
 
+    if (t.tool === 'macstats') {
+      if (opt.cpuBar !== false) {
+        h += '<div class="row"><div class="label"><span>CPU</span><span>' + (t.cpuPct || 0) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.cpuPct || 0) + '%"></i></div></div>';
+      }
+      if (opt.ramBar !== false) {
+        h += '<div class="row"><div class="label"><span>RAM (' + (t.memUsedGb || 0) + ' / ' + (t.memTotalGb || 0) + ' GB)</span><span>' + (t.memPct || 0) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.memPct || 0) + '%"></i></div></div>';
+      }
+      if (opt.diskBar !== false && t.diskTotalGb) {
+        h += '<div class="row"><div class="label"><span>Disco / (' + (t.diskUsedGb || 0) + ' / ' + (t.diskTotalGb || 0) + ' GB)</span><span>' + (t.diskPct || 0) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.diskPct || 0) + '%"></i></div></div>';
+      }
+      if (opt.sysInfo !== false || opt.uptime !== false) {
+        h += '<div class="stat-grid" style="margin-top:6px">' +
+             (opt.uptime !== false ? '<div class="stat-box"><div class="stat-val">' + (t.uptime || '-') + '</div><div class="stat-lbl">Uptime</div></div>' : '') +
+             (opt.sysInfo !== false ? '<div class="stat-box"><div class="stat-val" style="font-size:12px">' + (t.model || 'Mac') + '</div><div class="stat-lbl">' + (t.osRelease || 'macOS') + '</div></div>' : '') +
+             '</div>';
+      }
+      return h + '</div>';
+    }
+
+    if (t.tool === 'tamagotchi') {
+      var moodIcon = t.mood === 'happy' ? '✨' : (t.mood === 'hungry' ? '🍲' : (t.mood === 'sleeping' ? '💤' : '🐾'));
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 6px">' +
+           '<div><span style="font-size:17px;font-weight:bold">' + (t.name || 'Pixel') + '</span> ' +
+           '<span style="font-size:12px;opacity:0.75">Nível ' + (t.level || 1) + ' · ' + (t.ageDays || 1) + 'd</span></div>' +
+           '<div style="font-family:monospace;font-size:15px;font-weight:bold;background:#eee;padding:2px 8px;border-radius:4px;border:1px solid #ccc">' +
+           (t.spriteAscii || '(=^･ω･^=)') +
+           '</div>' +
+           '</div>';
+
+      if (opt.showStatus !== false) {
+        h += '<div class="sub" style="font-size:13px;margin-bottom:6px;font-style:italic">' + moodIcon + ' ' + (t.statusText || '') + '</div>';
+      }
+
+      if (opt.showBars !== false) {
+        h += '<div class="row"><div class="label"><span>Fome</span><span>' + (t.hunger || 0) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.hunger || 0) + '%"></i></div></div>';
+        h += '<div class="row"><div class="label"><span>Felicidade</span><span>' + (t.happiness || 0) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.happiness || 0) + '%"></i></div></div>';
+        h += '<div class="row"><div class="label"><span>Energia</span><span>' + (t.energy || 0) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.energy || 0) + '%"></i></div></div>';
+      }
+      return h + '</div>';
+    }
+
+    if (t.tool === 'sitescraper') {
+      var sites = t.sites || [];
+      if (sites.length === 0) {
+        h += '<div class="sub dim" style="margin-top:10px">Nenhum site configurado ou aguardando sincronização.</div>';
+      } else {
+        sites.forEach(function(s, idx) {
+          if (idx > 0) h += '<div style="border-top:1px dashed #ccc;margin:8px 0"></div>';
+          h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px">' +
+               '<strong style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px">🌐 ' + (s.name || s.url) + '</strong>' +
+               '<span style="font-size:11px;opacity:0.7">' + (s.updatedAt || '') + '</span>' +
+               '</div>';
+          var posts = s.posts || [];
+          if (posts.length === 0) {
+            h += '<div class="sub dim" style="font-size:12px">Sem novos posts</div>';
+          } else {
+            var limit = opt.maxItems || 3;
+            posts.slice(0, limit).forEach(function(p) {
+              h += '<div style="margin:3px 0;display:flex;align-items:baseline;justify-content:space-between;gap:6px">' +
+                   '<span style="font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">• ' + p.title + '</span>' +
+                   (opt.showDate !== false && p.date ? '<span style="font-size:11px;opacity:0.65;flex-shrink:0">' + p.date + '</span>' : '') +
+                   '</div>';
+            });
+          }
+        });
+      }
+      return h + '</div>';
+    }
+
     (t.windows || []).forEach(function (w) { h += bar(w.name, w.pct, w.resets_at); });
     (t.stale_windows || []).forEach(function (w) { h += staleBar(w.name); });
     if (t.noteKey) h += '<div class="sub dim">! ' + copy(t.noteKey) + '</div>';
