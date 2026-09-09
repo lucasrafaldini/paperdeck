@@ -20,6 +20,7 @@ import {
   showNotifyWindow,
   showPanelWindow,
   showSettingsWindow,
+  showTamagotchiWindow,
   showWidgetsWindow,
 } from './windows'
 import { BASE_URL, PORT } from './constants'
@@ -87,6 +88,7 @@ if (!hasLock) {
       onOpenPanel: showPanelWindow,
       onOpenSettings: showSettingsWindow,
       onOpenWidgets: showWidgetsWindow,
+      onOpenTamagotchi: showTamagotchiWindow,
       onOpenNotify: showNotifyWindow,
       onRefresh: () => {
         void renderDashboard()

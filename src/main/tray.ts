@@ -7,6 +7,7 @@ export interface TrayHandlers {
   onOpenPanel: () => void
   onOpenSettings: () => void
   onOpenWidgets: () => void
+  onOpenTamagotchi: () => void
   onOpenNotify: () => void
   onQuit: () => void
   onRefresh: () => void
@@ -48,6 +49,7 @@ function buildTrayMenu(handlers: TrayHandlers): Menu {
     { type: 'separator' },
     { label: text('trayOpenPanel'), click: handlers.onOpenPanel },
     { label: text('trayOpenCustomize'), click: handlers.onOpenWidgets },
+    { label: text('trayOpenTamagotchi', undefined) || 'Mascote Memtchi', click: handlers.onOpenTamagotchi },
     { label: text('trayOpenNotify'), click: handlers.onOpenNotify },
     { label: text('trayRefresh'), click: handlers.onRefresh },
     { type: 'separator' },

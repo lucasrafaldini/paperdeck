@@ -63,6 +63,13 @@ const api: DashboardApi = {
     ipcRenderer.on('widgets:open', listener)
     return () => ipcRenderer.removeListener('widgets:open', listener)
   },
+  onOpenTamagotchi: (callback) => {
+    const listener = (): void => {
+      callback()
+    }
+    ipcRenderer.on('tamagotchi:open', listener)
+    return () => ipcRenderer.removeListener('tamagotchi:open', listener)
+  },
   onOpenNotify: (callback) => {
     const listener = (): void => {
       callback()

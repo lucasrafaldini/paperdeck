@@ -161,9 +161,27 @@ function performAction(action, payload = {}) {
     updated.character = payload.character;
     updated.type = payload.character;
     const charDef = sprites.getCharacter(payload.character);
-    if (charDef) updated.name = charDef.name;
+    if (charDef && !updated.customName) {
+      updated.name = charDef.name;
+    }
   } else if (action === 'setName' && payload.name) {
     updated.name = String(payload.name).trim();
+    updated.customName = true;
+  } else if (action === 'setOptions') {
+    if (payload.name) {
+      updated.name = String(payload.name).trim();
+      updated.customName = true;
+    }
+    if (payload.character) {
+      updated.character = payload.character;
+      updated.type = payload.character;
+      if (!updated.customName) {
+        const charDef = sprites.getCharacter(payload.character);
+        if (charDef) updated.name = charDef.name;
+      }
+    }
+    if (payload.animSpeed) updated.animSpeed = payload.animSpeed;
+    if (payload.theme) updated.theme = payload.theme;
   }
 
   writePetState(updated);
@@ -196,6 +214,8 @@ async function collect() {
     petCount: state.petCount,
     playCount: state.playCount,
     bathCount: state.bathCount,
+    animSpeed: state.animSpeed || 'normal',
+    theme: state.theme || 'lcd',
   };
 }
 

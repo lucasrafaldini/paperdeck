@@ -196,7 +196,7 @@ export interface DashboardApi {
   saveWidgetOptions: (widgetOptions: WidgetOptionsMap) => Promise<DashboardWidgetsConfig>
   saveLayout: (layout: DashboardLayoutConfig, extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[]; dashboardTitle?: string }) => Promise<DashboardWidgetsConfig>
   saveCustomSites: (sites: CustomSite[]) => Promise<DashboardWidgetsConfig>
-  petAction: (action: 'feed' | 'pet' | 'play' | 'bath' | 'setCharacter' | 'setName', payload?: Record<string, unknown>) => Promise<unknown>
+  petAction: (action: string, payload?: Record<string, unknown>) => Promise<unknown>
   getPetState: () => Promise<unknown>
   getNotification: () => Promise<ActiveNotification | null>
   sendNotification: (message: string, durationSec?: number) => Promise<ActiveNotification | null>
@@ -209,6 +209,7 @@ export interface DashboardApi {
   onOpenPanel: (callback: () => void) => () => void
   onOpenSettings: (callback: () => void) => () => void
   onOpenWidgets: (callback: () => void) => () => void
+  onOpenTamagotchi: (callback: () => void) => () => void
   onOpenNotify: (callback: () => void) => () => void
   onPipChanged: (callback: (enabled: boolean) => void) => () => void
   onRenderCompleted: (callback: (result: RenderResult) => void) => () => void

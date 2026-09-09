@@ -15,6 +15,7 @@ import { NotifyView } from './views/NotifyView'
 import { PanelView } from './views/PanelView'
 import { SettingsView } from './views/SettingsView'
 import { Sidebar } from './views/Sidebar'
+import { TamagotchiView } from './views/TamagotchiView'
 import { Topbar } from './views/Topbar'
 import { WidgetsView } from './views/WidgetsView'
 import type {
@@ -93,6 +94,7 @@ export default function App(): React.JSX.Element {
     let unsubscribePanel = (): void => {}
     let unsubscribePip = (): void => {}
     let unsubscribeWidgets = (): void => {}
+    let unsubscribeTamagotchi = (): void => {}
     let unsubscribeNotify = (): void => {}
     let liveTimer: number | undefined
 
@@ -143,6 +145,9 @@ export default function App(): React.JSX.Element {
     unsubscribeWidgets = window.dashboard.onOpenWidgets(() => {
       setNav('widgets')
     })
+    unsubscribeTamagotchi = window.dashboard.onOpenTamagotchi(() => {
+      setNav('tamagotchi')
+    })
     unsubscribeNotify = window.dashboard.onOpenNotify(() => {
       setNav('notificacoes')
     })
@@ -157,6 +162,7 @@ export default function App(): React.JSX.Element {
       unsubscribeSettings()
       unsubscribePanel()
       unsubscribeWidgets()
+      unsubscribeTamagotchi()
       unsubscribeNotify()
       unsubscribePip()
     }
@@ -181,6 +187,7 @@ export default function App(): React.JSX.Element {
   const navItems = useMemo<NavItem[]>(() => [
     { key: 'painel', label: t('menuDashboard'), hint: t('hintDashboard'), icon: 'book' },
     { key: 'widgets', label: t('menuWidgets'), hint: t('hintWidgets'), icon: 'slider' },
+    { key: 'tamagotchi', label: t('menuTamagotchi'), hint: t('hintTamagotchi'), icon: 'pet' },
     { key: 'notificacoes', label: t('menuNotify'), hint: t('hintNotify'), icon: 'bell' },
     { key: 'kindle', label: t('menuKindle'), hint: t('hintKindle'), icon: 'kindle' },
     { key: 'logins', label: t('menuLogins'), hint: t('hintLogins'), icon: 'login' },
@@ -555,6 +562,14 @@ export default function App(): React.JSX.Element {
             <WidgetsView
               onSaved={(msg) => showMessage('widgets', msg)}
               onError={(err) => showError('widgets', err)}
+              t={t}
+            />
+          ) : null}
+
+          {nav === 'tamagotchi' ? (
+            <TamagotchiView
+              onSaved={(msg) => showMessage('tamagotchi', msg)}
+              onError={(err) => showError('tamagotchi', err)}
               t={t}
             />
           ) : null}

@@ -109,6 +109,11 @@ export function showWidgetsWindow(): void {
   sendToRenderer('widgets:open')
 }
 
+export function showTamagotchiWindow(): void {
+  restoreMainWindow()
+  sendToRenderer('tamagotchi:open')
+}
+
 export function showNotifyWindow(): void {
   restoreMainWindow()
   sendToRenderer('notify:open')
