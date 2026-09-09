@@ -16,6 +16,7 @@ const api: DashboardApi = {
   getConfig: () => ipcRenderer.invoke('config:get'),
   installKindle: () => ipcRenderer.invoke('kindle:install'),
   setLanguage: (language: LanguagePreference) => ipcRenderer.invoke('config:set-language', language),
+  setDashboardTitle: (title: string) => ipcRenderer.invoke('config:set-title', title),
   setPictureInPicture: (enabled: boolean) => ipcRenderer.invoke('config:set-pip', enabled),
   setPictureInPictureScale: (scale: number) => ipcRenderer.invoke('config:set-pip-scale', scale),
   startKindleScript: () => ipcRenderer.invoke('kindle:script-start'),

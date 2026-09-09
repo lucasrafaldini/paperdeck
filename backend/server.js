@@ -133,7 +133,12 @@ function readLocaleI18n(lang) {
   const safe = /^[A-Za-z-]{2,12}$/.test(lang) ? lang : 'en';
   try {
     const data = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, `${safe}.json`), 'utf8'));
-    return { meta: data.meta || {}, dashboard: data.dashboard || {} };
+    const res = { meta: data.meta || {}, dashboard: data.dashboard || {} };
+    const cfg = configMgr.readConfig();
+    if (cfg.dashboardTitle) {
+      res.dashboard.title = cfg.dashboardTitle;
+    }
+    return res;
   } catch {
     return safe === 'en' ? { meta: {}, dashboard: {} } : readLocaleI18n('en');
   }

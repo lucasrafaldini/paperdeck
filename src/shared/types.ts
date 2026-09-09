@@ -34,6 +34,7 @@ export interface KindleDevice {
 }
 
 export interface DashboardConfig {
+  dashboardTitle?: string
   dashboardUrl: string
   kindleFullRefreshEvery: number
   kindleIp: string
@@ -51,6 +52,7 @@ export interface DashboardConfig {
 }
 
 export interface DashboardConfigInput {
+  dashboardTitle?: string
   dashboardUrl: string
   kindleFullRefreshEvery: number
   kindleIp: string
@@ -136,6 +138,7 @@ export interface DashboardLayoutConfig {
 }
 
 export interface DashboardWidgetsConfig {
+  dashboardTitle?: string
   activeWidgets: string[]
   availableWidgets: WidgetItem[]
   widgetOptions?: WidgetOptionsMap
@@ -178,6 +181,7 @@ export interface DashboardApi {
   getConfig: () => Promise<DashboardConfig>
   installKindle: () => Promise<KindleInstallResult>
   setLanguage: (language: LanguagePreference) => Promise<DashboardConfig>
+  setDashboardTitle: (title: string) => Promise<DashboardConfig>
   setPictureInPicture: (enabled: boolean) => Promise<DashboardConfig>
   setPictureInPictureScale: (scale: number) => Promise<DashboardConfig>
   startKindleScript: () => Promise<KindleScriptStatus>
@@ -190,7 +194,7 @@ export interface DashboardApi {
   getWidgets: () => Promise<DashboardWidgetsConfig>
   saveWidgets: (activeWidgets: string[]) => Promise<DashboardWidgetsConfig>
   saveWidgetOptions: (widgetOptions: WidgetOptionsMap) => Promise<DashboardWidgetsConfig>
-  saveLayout: (layout: DashboardLayoutConfig, extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[] }) => Promise<DashboardWidgetsConfig>
+  saveLayout: (layout: DashboardLayoutConfig, extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[]; dashboardTitle?: string }) => Promise<DashboardWidgetsConfig>
   saveCustomSites: (sites: CustomSite[]) => Promise<DashboardWidgetsConfig>
   petAction: (action: 'feed' | 'pet' | 'play' | 'bath' | 'setCharacter' | 'setName', payload?: Record<string, unknown>) => Promise<unknown>
   getPetState: () => Promise<unknown>

@@ -45,6 +45,7 @@ export default function App(): React.JSX.Element {
   const [rendering, setRendering] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingLanguage, setSavingLanguage] = useState(false)
+  const [savingTitle, setSavingTitle] = useState(false)
   const [savingPip, setSavingPip] = useState(false)
   const [savingPipScale, setSavingPipScale] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(false)
@@ -350,6 +351,21 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  async function handleSaveDashboardTitle(title: string): Promise<void> {
+    setSavingTitle(true)
+    clearNotice('configuracoes')
+    try {
+      const saved = await window.dashboard.setDashboardTitle(title)
+      setConfig(saved)
+      showMessage('configuracoes', 'Título do dashboard atualizado!')
+      setPreviewKey(Date.now())
+    } catch (titleError) {
+      showError('configuracoes', titleError instanceof Error ? titleError.message : String(titleError))
+    } finally {
+      setSavingTitle(false)
+    }
+  }
+
   async function handleTogglePictureInPicture(enabled: boolean): Promise<void> {
     setSavingPip(true)
     clearNotice('configuracoes')
@@ -553,8 +569,10 @@ export default function App(): React.JSX.Element {
 
           {nav === 'configuracoes' ? (
             <SettingsView
+              dashboardTitle={config?.dashboardTitle || 'Dashboard do Frater'}
               disabled={!config}
               languagePreference={config?.language ?? 'system'}
+              onChangeDashboardTitle={(title) => void handleSaveDashboardTitle(title)}
               onChangeLanguage={(language) => void handleSaveLanguage(language)}
               onChangePictureInPictureScale={(scale) => void handleChangePipScale(scale)}
               onTogglePictureInPicture={(enabled) => void handleTogglePictureInPicture(enabled)}
@@ -563,6 +581,7 @@ export default function App(): React.JSX.Element {
               saving={savingLanguage}
               savingPip={savingPip}
               savingPipScale={savingPipScale}
+              savingTitle={savingTitle}
               systemLanguage={runtime?.systemLanguage}
               t={t}
             />

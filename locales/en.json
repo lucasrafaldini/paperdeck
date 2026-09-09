@@ -224,7 +224,7 @@
     "reportAction": "ACTION"
   },
   "dashboard": {
-    "title": "Token Dashboard",
+    "title": "Kindle Dashboard",
     "resetAt": "Resets",
     "unavailable": "unavailable",
     "tokenExpired": "expired token - run `claude`",

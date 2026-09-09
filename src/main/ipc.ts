@@ -24,6 +24,7 @@ import {
   loadConfig,
   publicConfig,
   saveConfig,
+  setDashboardTitle,
   setLanguage,
   setPictureInPicture,
   setPictureInPictureScale,
@@ -67,6 +68,20 @@ export function registerIpc(handlers: IpcHandlers): void {
   ipcMain.handle('config:set-language', async (_event, language: LanguagePreference): Promise<DashboardConfig> => {
     const saved = await setLanguage(language)
     refreshTray()
+    return saved
+  })
+
+  ipcMain.handle('config:set-title', async (_event, title: string): Promise<DashboardConfig> => {
+    const saved = await setDashboardTitle(title)
+    try {
+      await fetch(`${BASE_URL}/api/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dashboardTitle: saved.dashboardTitle }),
+        signal: AbortSignal.timeout(3000),
+      })
+    } catch {}
+    void renderDashboard().catch(() => {})
     return saved
   })
 
@@ -169,7 +184,7 @@ export function registerIpc(handlers: IpcHandlers): void {
     async (
       _event,
       layout: DashboardLayoutConfig,
-      extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[] },
+      extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[]; dashboardTitle?: string },
     ): Promise<DashboardWidgetsConfig> => {
       let result: DashboardWidgetsConfig
       const payload = { layout, ...(extra || {}) }

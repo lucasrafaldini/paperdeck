@@ -7,6 +7,7 @@ import { applyLanguagePreference, normalizeLanguagePreference, text } from './i1
 import { configPath, defaultDashboardUrl } from './paths'
 
 export interface StoredDashboardConfig {
+  dashboardTitle?: string
   dashboardUrl: string
   language: LanguagePreference
   kindleFullRefreshEvery: number
@@ -53,6 +54,7 @@ function defaultStoredConfig(): StoredDashboardConfig {
   ]
 
   return {
+    dashboardTitle: 'Dashboard do Frater',
     dashboardUrl: defaultDashboardUrl(),
     language: 'system',
     kindleFullRefreshEvery: 20,
@@ -98,6 +100,7 @@ function hasSavedPassword(config: StoredDashboardConfig): boolean {
 
 export function publicConfig(config: StoredDashboardConfig): DashboardConfig {
   return {
+    dashboardTitle: config.dashboardTitle ?? 'Dashboard do Frater',
     dashboardUrl: config.dashboardUrl,
     kindleFullRefreshEvery: config.kindleFullRefreshEvery,
     kindleIp: config.kindleIp,
@@ -137,9 +140,13 @@ export async function loadConfig(): Promise<StoredDashboardConfig> {
           },
         ]
     const activeKindleId = typeof raw.activeKindleId === 'string' && raw.activeKindleId ? raw.activeKindleId : kindleDevices[0].id
+    const dashboardTitle = typeof raw.dashboardTitle === 'string' && raw.dashboardTitle.trim() !== ''
+      ? raw.dashboardTitle.trim()
+      : (raw.dashboardTitle === '' ? 'Kindle Dashboard' : defaults.dashboardTitle)
 
     dashboardConfig = {
       ...defaults,
+      dashboardTitle,
       dashboardUrl: typeof raw.dashboardUrl === 'string' ? raw.dashboardUrl : defaults.dashboardUrl,
       language: normalizeLanguagePreference(raw.language),
       kindleFullRefreshEvery: positiveInt(String(raw.kindleFullRefreshEvery ?? ''), defaults.kindleFullRefreshEvery),
@@ -243,6 +250,9 @@ export async function saveConfig(raw: unknown): Promise<DashboardConfig> {
 
   const next: StoredDashboardConfig = {
     ...previous,
+    dashboardTitle: typeof input.dashboardTitle === 'string'
+      ? (input.dashboardTitle.trim() || 'Kindle Dashboard')
+      : (previous.dashboardTitle ?? 'Dashboard do Frater'),
     dashboardUrl: normalizedDashboardUrl(requiredString(input, 'dashboardUrl', 500)),
     kindleFullRefreshEvery: numberField(input, 'kindleFullRefreshEvery', previous.kindleFullRefreshEvery, 1000),
     kindleIp,
@@ -269,6 +279,17 @@ export async function setLanguage(raw: unknown): Promise<DashboardConfig> {
   }
   await writeConfig(next)
   applyLanguagePreference(next.language)
+  return publicConfig(next)
+}
+
+export async function setDashboardTitle(raw: unknown): Promise<DashboardConfig> {
+  const previous = await loadConfig()
+  const title = typeof raw === 'string' ? raw.trim() : ''
+  const next: StoredDashboardConfig = {
+    ...previous,
+    dashboardTitle: title || 'Kindle Dashboard',
+  }
+  await writeConfig(next)
   return publicConfig(next)
 }
 

@@ -77,6 +77,7 @@ const AVAILABLE_WIDGETS = [
 ];
 
 const DEFAULT_CONFIG = {
+  dashboardTitle: 'Dashboard do Frater',
   activeWidgets: ['claude', 'antigravity', 'omnirouter'],
   availableWidgets: AVAILABLE_WIDGETS,
   widgetOptions: DEFAULT_WIDGET_OPTIONS,
@@ -100,6 +101,9 @@ function readConfig() {
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
+        dashboardTitle: typeof parsed.dashboardTitle === 'string' && parsed.dashboardTitle.trim() !== ''
+          ? parsed.dashboardTitle
+          : (parsed.dashboardTitle === '' ? 'Kindle Dashboard' : DEFAULT_CONFIG.dashboardTitle),
         availableWidgets: AVAILABLE_WIDGETS,
         widgetOptions: {
           ...DEFAULT_WIDGET_OPTIONS,

@@ -38,7 +38,12 @@ async function collectAll(requestedWidgets) {
     return { tool: id, label: id, confidence: 'error', error: String(r.reason) };
   });
 
-  return { updatedAt: new Date().toISOString(), source: 'live', tools };
+  return {
+    updatedAt: new Date().toISOString(),
+    source: 'live',
+    tools,
+    dashboardTitle: config.dashboardTitle || 'Kindle Dashboard',
+  };
 }
 
 module.exports = { collectAll, REGISTRY };

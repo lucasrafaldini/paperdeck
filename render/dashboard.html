@@ -159,7 +159,7 @@
   <button id="pip-close" type="button" aria-label="Close" title="Close">&times;</button>
   <div class="stage">
     <header>
-      <h1 id="title">Token Dashboard</h1>
+      <h1 id="title">Dashboard do Frater</h1>
       <div class="stamp" id="stamp">-</div>
     </header>
     <div id="notify-box" class="notify-banner" style="display:none"></div>
@@ -184,12 +184,12 @@
     }
   }
 
-  // Fallback minimo em ingles: garante que o PNG renderize mesmo se /api/i18n falhar.
+  // Fallback minimo: garante que o PNG renderize mesmo se /api/i18n falhar.
   var FALLBACK = {
     locale: 'en-US',
     currency: 'USD',
     copy: {
-      title: 'Token Dashboard',
+      title: 'Kindle Dashboard',
       resetAt: 'Resets',
       unavailable: 'unavailable',
       tokenExpired: 'expired token - run `claude`',
@@ -680,7 +680,8 @@
 
   function renderWhenReady() {
     if (!i18nLoaded || !usageLoaded) return;
-    document.getElementById('title').textContent = copy('title');
+    var customTitle = (usage && usage.dashboardTitle) || copy('title') || 'Kindle Dashboard';
+    document.getElementById('title').textContent = customTitle;
     render(usage || unavailableDashboard());
   }
 

@@ -78,6 +78,7 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
 
 export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps): React.JSX.Element {
   const [blocks, setBlocks] = useState<DashboardBlock[]>([])
+  const [dashboardTitle, setDashboardTitle] = useState('Dashboard do Frater')
   const [widgetOptions, setWidgetOptions] = useState<WidgetOptionsMap>({})
   const [customSites, setCustomSites] = useState<CustomSite[]>([])
   const [newSiteName, setNewSiteName] = useState('')
@@ -95,6 +96,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
     window.dashboard
       .getWidgets()
       .then((cfg: DashboardWidgetsConfig) => {
+        if (cfg.dashboardTitle) setDashboardTitle(cfg.dashboardTitle)
         setWidgetOptions(cfg.widgetOptions || {})
         setCustomSites(cfg.customSites || [])
         if (cfg.layout && Array.isArray(cfg.layout.blocks) && cfg.layout.blocks.length > 0) {
@@ -215,6 +217,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
         activeWidgets: activeTools,
         widgetOptions,
         customSites,
+        dashboardTitle: dashboardTitle.trim() || 'Kindle Dashboard',
       })
       await window.dashboard.renderNow()
       onSaved('Layout salvo e enviado ao Kindle com sucesso!')
@@ -308,7 +311,28 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
               paddingBottom: '8px',
             }}
           >
-            <strong style={{ fontSize: '24px', letterSpacing: '-0.5px' }}>Dashboard de Tokens</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="text"
+                value={dashboardTitle}
+                placeholder="Kindle Dashboard"
+                onChange={(e) => setDashboardTitle(e.target.value)}
+                style={{
+                  fontSize: '22px',
+                  fontWeight: 'bold',
+                  letterSpacing: '-0.5px',
+                  border: '1px dashed transparent',
+                  background: 'transparent',
+                  color: '#000',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  maxWidth: '380px',
+                }}
+                onFocus={(e) => (e.target.style.border = '1px dashed #666')}
+                onBlur={(e) => (e.target.style.border = '1px dashed transparent')}
+                title="Clique para editar o título do dashboard"
+              />
+            </div>
             <span style={{ fontSize: '14px', fontWeight: 'bold' }}>08/09/2026 12:00  🔋 44%</span>
           </div>
 
