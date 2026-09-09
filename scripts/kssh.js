@@ -51,21 +51,36 @@ function assertConnectionConfig(config) {
   if (!config.password && !config.privateKey && !config.agent) throw new Error('KINDLE_PW or SSH key is required');
 }
 
-function connect(options = {}) {
-  return new Promise((resolve, reject) => {
-    const config = connectionConfig(options);
-    assertConnectionConfig(config);
+async function connect(options = {}) {
+  const config = connectionConfig(options);
+  assertConnectionConfig(config);
 
-    const client = new Client();
-    const onError = (error) => reject(error);
+  const maxAttempts = options.retries !== undefined ? options.retries : 3;
+  let lastError;
 
-    client.once('error', onError);
-    client.once('ready', () => {
-      client.removeListener('error', onError);
-      resolve(client);
-    });
-    client.connect(config);
-  });
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const client = await new Promise((resolve, reject) => {
+        const c = new Client();
+        const onError = (error) => reject(error);
+
+        c.once('error', onError);
+        c.once('ready', () => {
+          c.removeListener('error', onError);
+          resolve(c);
+        });
+        c.connect(config);
+      });
+      return client;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        // Aguarda 1.2s para acordar rádio Wi-Fi do Kindle em repouso
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+    }
+  }
+  throw lastError;
 }
 
 function execCommand(client, command, options = {}) {
