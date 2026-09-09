@@ -112,7 +112,11 @@ enter_deep_sleep() {
   [ -z "$SLEEP_TIME" ] && SLEEP_TIME=3600
   case "$SLEEP_TIME" in ''|*[!0-9]*|0) SLEEP_TIME=3600;; esac
 
-  echo "[dash-loop] $(date) entrando em deep sleep (${SLEEP_TIME}s) ate proximo ciclo"
+  echo "[dash-loop] $(date) entrando em deep sleep (${SLEEP_TIME}s)"
+
+  # Garante bloqueio do screensaver para a imagem permanecer na tela
+  lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
+  lipc-set-prop com.lab126.powerd disableScreenOff 1 2>/dev/null
 
   # 1. Alarme RTC no hardware (rtc1 e rtc0)
   lipc-set-prop com.lab126.powerd rtcWakeup "$SLEEP_TIME" 2>/dev/null
@@ -124,17 +128,16 @@ enter_deep_sleep() {
   # 2. Desliga Wi-Fi para cortar consumo do rádio
   lipc-set-prop com.lab126.wifid enable 0 2>/dev/null
 
-  # 3. Libera powerd para permitir suspensão profunda
-  lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
-  lipc-set-prop com.lab126.powerd disableScreenOff 0 2>/dev/null
+  # Breve pausa para o controlador e-ink finalizar a transição de pigmentos
+  sleep 1
 
-  # 4. Suspende SoC para RAM (Kernel dorme aqui ate RTC disparar)
+  # 3. Suspende SoC para RAM (Kernel dorme aqui com o dashboard fixo na tela)
   echo mem > /sys/power/state 2>/dev/null || sleep "$SLEEP_TIME"
 
   # --- CPU ACORDOU ---
   echo "[dash-loop] $(date) acordou do deep sleep"
 
-  # 5. Restaura Wi-Fi
+  # 4. Restaura Wi-Fi
   lipc-set-prop com.lab126.wifid enable 1 2>/dev/null
   wpa_cli -i wlan0 reassociate >/dev/null 2>&1
   wait_for_wifi
@@ -163,16 +166,8 @@ echo "[dash-loop] start $(date) pid=$$ PC=$PC interval=${INTERVAL}s night_interv
 
 while [ ! -f "$STOP" ]; do
   turn_off_frontlight
-
-  if is_night_time; then
-    # Durante a madrugada (01h-10h), nao forca tela acordada antes do download
-    lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
-    lipc-set-prop com.lab126.powerd disableScreenOff 0 2>/dev/null
-  else
-    # Modo diurno: mantem tela ligada e pronta
-    lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
-    lipc-set-prop com.lab126.powerd disableScreenOff 1 2>/dev/null
-  fi
+  lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null
+  lipc-set-prop com.lab126.powerd disableScreenOff 1 2>/dev/null
 
   BATT=$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null || echo "")
   CHG=$(lipc-get-prop com.lab126.powerd isCharging 2>/dev/null || echo "0")
