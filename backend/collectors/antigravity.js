@@ -133,6 +133,17 @@ async function collect() {
       }));
     }
 
+    const historyPoints = [0, 0, 0, 0, 0, 0, 0];
+    if (fs.existsSync(convDir)) {
+      const todayStart = new Date(now).setHours(0, 0, 0, 0);
+      const dayMs = 24 * 3600 * 1000;
+      for (let idx = 0; idx < 7; idx++) {
+        const dayStart = todayStart - (6 - idx) * dayMs;
+        const dayEnd = dayStart + dayMs;
+        historyPoints[idx] = stats.filter((s) => s.mtime >= dayStart && s.mtime < dayEnd).length;
+      }
+    }
+
     const brainDir = path.join(AGY_DIR, 'brain');
     let totalBrainProjects = 0;
     let activeSessionSteps = 0;
@@ -193,6 +204,7 @@ async function collect() {
       totalBrainProjects,
       activeSessionSteps,
       recentConversations,
+      historyPoints,
       status,
     };
 

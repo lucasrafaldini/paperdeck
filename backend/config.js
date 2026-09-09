@@ -93,6 +93,20 @@ const DEFAULT_CONFIG = {
   scheduledNotifications: [],
 };
 
+function mergeWidgetOptions(base, incoming) {
+  const merged = {};
+  for (const [tool, opts] of Object.entries(base || {})) {
+    merged[tool] = { ...(opts || {}) };
+  }
+  for (const [tool, opts] of Object.entries(incoming || {})) {
+    merged[tool] = {
+      ...(merged[tool] || {}),
+      ...(opts || {}),
+    };
+  }
+  return merged;
+}
+
 function readConfig() {
   try {
     const file = getConfigFile();
@@ -105,10 +119,7 @@ function readConfig() {
           ? parsed.dashboardTitle
           : (parsed.dashboardTitle === '' ? 'Kindle Dashboard' : DEFAULT_CONFIG.dashboardTitle),
         availableWidgets: AVAILABLE_WIDGETS,
-        widgetOptions: {
-          ...DEFAULT_WIDGET_OPTIONS,
-          ...(parsed.widgetOptions || {}),
-        },
+        widgetOptions: mergeWidgetOptions(DEFAULT_WIDGET_OPTIONS, parsed.widgetOptions),
         customSites: Array.isArray(parsed.customSites) ? parsed.customSites : [],
         layout: parsed.layout || DEFAULT_CONFIG.layout,
         scheduledNotifications: Array.isArray(parsed.scheduledNotifications) ? parsed.scheduledNotifications : [],
@@ -123,8 +134,31 @@ function writeConfig(patch) {
   const next = {
     ...current,
     ...patch,
+    widgetOptions: mergeWidgetOptions(current.widgetOptions, patch.widgetOptions),
     availableWidgets: AVAILABLE_WIDGETS,
   };
+
+  // Se layout estiver em modo custom e activeWidgets foi atualizado,
+  // sincroniza blocks do layout para incluir novas ferramentas ativas
+  if (next.layout && next.layout.mode === 'custom' && Array.isArray(next.activeWidgets)) {
+    const existingTools = (next.layout.blocks || []).map((b) => b.tool);
+    const updatedBlocks = [...(next.layout.blocks || [])].filter((b) => next.activeWidgets.includes(b.tool));
+    next.activeWidgets.forEach((tool, idx) => {
+      if (!existingTools.includes(tool)) {
+        updatedBlocks.push({
+          id: `block_${tool}_${Date.now()}_${idx}`,
+          tool,
+          width: 'half',
+          height: 'standard',
+        });
+      }
+    });
+    next.layout = {
+      ...next.layout,
+      blocks: updatedBlocks,
+    };
+  }
+
   const file = getConfigFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(next, null, 2), 'utf8');

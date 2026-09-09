@@ -62,7 +62,7 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'bar7d', label: 'Barra de cota de 7 dias', default: true },
     { id: 'resets', label: 'Horários de reinício de cota', default: true },
     { id: 'statsGrid', label: 'Métricas de conversas, projetos e passos', default: true },
-    { id: 'historyChart', label: 'Série histórica de passos de sessão', default: false },
+    { id: 'historyChart', label: 'Gráfico histórico de atividade (7 dias)', default: false },
   ],
   macstats: [
     { id: 'cpuBar', label: 'Uso de CPU (%) com barra gráfica', default: true },
@@ -312,7 +312,7 @@ export function WidgetsView({ onSaved, onError, t }: WidgetsViewProps): React.JS
                 </div>
 
                 {/* Sub-opções / Checkboxes de Métricas */}
-                {isActive && (isExpanded || true) && schema.length > 0 && (
+                {schema.length > 0 && (
                   <div
                     style={{
                       marginTop: '14px',
@@ -323,9 +323,16 @@ export function WidgetsView({ onSaved, onError, t }: WidgetsViewProps): React.JS
                       gap: '8px',
                     }}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-soft)' }}>
-                      Métricas e Gráficos Visíveis:
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-soft)' }}>
+                        Métricas e Gráficos Visíveis:
+                      </span>
+                      {!isActive && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-soft)', fontStyle: 'italic' }}>
+                          ⚙️ Pré-configuração (Já entrará customizado ao ativar)
+                        </span>
+                      )}
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px' }}>
                       {schema.map((item) => {
                         const widgetOpts = options[widget.id] || {}

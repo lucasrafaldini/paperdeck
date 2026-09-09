@@ -37,7 +37,7 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'bar7d', label: 'Barra cota 7 dias', default: true },
     { id: 'resets', label: 'Horários de reinício', default: true },
     { id: 'statsGrid', label: 'Grid conversas/projetos/passos', default: true },
-    { id: 'historyChart', label: 'Série histórica passos', default: false },
+    { id: 'historyChart', label: 'Gráfico histórico 7d', default: false },
   ],
   macstats: [
     { id: 'cpuBar', label: 'Barra de CPU (%)', default: true },
@@ -439,19 +439,37 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
 
                   {/* Block Simulated Content */}
                   <div style={{ fontSize: '13px', color: '#333' }}>
-                    {block.tool === 'claude' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div>5h: [████████░░░░░░░░] 68%</div>
-                        <div>7d: [████░░░░░░░░░░░░] 38%</div>
-                      </div>
-                    )}
-                    {block.tool === 'antigravity' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div>5h: [████░░░░░░░░░░░░] 23%</div>
-                        <div>7d: [█████░░░░░░░░░░░] 27%</div>
-                        <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>26 Conversas · 27 Projetos · Ativo</div>
-                      </div>
-                    )}
+                    {block.tool === 'claude' && (() => {
+                      const toolOpts = Object.assign({}, widgetOptions['claude'] || {}, block.options || {})
+                      const hasHist = toolOpts.history7d || toolOpts.historyChart
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div>5h: [████████░░░░░░░░] 68%</div>
+                          <div>7d: [████░░░░░░░░░░░░] 38%</div>
+                          {hasHist && (
+                            <div style={{ fontSize: '11px', marginTop: '2px', fontWeight: 600, color: '#111' }}>
+                              📊 [█ ▄ ▆ ▅ █ ▅ ▇] Gráfico 7 dias
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+                    {block.tool === 'antigravity' && (() => {
+                      const toolOpts = Object.assign({}, widgetOptions['antigravity'] || {}, block.options || {})
+                      const hasHist = toolOpts.historyChart || toolOpts.history7d
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div>5h: [████░░░░░░░░░░░░] 23%</div>
+                          <div>7d: [█████░░░░░░░░░░░] 27%</div>
+                          <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>26 Conversas · 27 Projetos · Ativo</div>
+                          {hasHist && (
+                            <div style={{ fontSize: '11px', marginTop: '2px', fontWeight: 600, color: '#111' }}>
+                              📊 [  ▂   ▂ ▃ ▄] Gráfico 7 dias
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
                     {block.tool === 'omnirouter' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ fontWeight: 'bold' }}>1.83M Tokens · $5.34 Total · 8.5k Reqs</div>

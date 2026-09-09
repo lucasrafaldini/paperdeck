@@ -143,6 +143,8 @@ test('claude collector calculates 5h and 7d resets from desktop history', async 
     assert.equal(w5h.resets_at, new Date(t0 + 3600_000 + 5 * 3600_000).toISOString());
     // 7d window started at t0 -> resets at t0 + 7 * 24 * 3600_000
     assert.equal(w7d.resets_at, new Date(t0 + 7 * 24 * 3600_000).toISOString());
+    assert.ok(Array.isArray(res.historyPoints), 'historyPoints should be an array');
+    assert.equal(res.historyPoints.length, 7);
   } finally {
     fs.rmSync(homeDir, { recursive: true, force: true });
   }

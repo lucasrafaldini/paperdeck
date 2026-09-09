@@ -79,6 +79,24 @@ function computeDesktopResets(samples, now = Date.now()) {
   return { reset5h, reset7d };
 }
 
+function compute7DayHistory(samples, now = Date.now()) {
+  const points = [0, 0, 0, 0, 0, 0, 0];
+  if (!Array.isArray(samples) || !samples.length) return points;
+  const dayMs = 24 * 3600 * 1000;
+  const todayStart = new Date(now).setHours(0, 0, 0, 0);
+
+  for (let idx = 0; idx < 7; idx++) {
+    const dayStart = todayStart - (6 - idx) * dayMs;
+    const dayEnd = dayStart + dayMs;
+    const daySamples = samples.filter((s) => s.t >= dayStart && s.t < dayEnd);
+    if (daySamples.length > 0) {
+      const maxSd = Math.max(...daySamples.map((s) => ((s.u && s.u.sd != null) ? Number(s.u.sd) : 0)));
+      points[idx] = maxSd;
+    }
+  }
+  return points;
+}
+
 function readDesktopHistory() {
   if (!fs.existsSync(DESKTOP_HISTORY)) return null;
   try {
@@ -96,6 +114,7 @@ function readDesktopHistory() {
         { name: '5h', pct: Number(last.u.fh || 0), resets_at: resets.reset5h },
         { name: '7d', pct: Number(last.u.sd || 0), resets_at: resets.reset7d }
       ],
+      historyPoints: compute7DayHistory(samples),
       confidence: 'live',
       updatedAt: new Date(last.t || Date.now()).toISOString()
     };
@@ -126,6 +145,15 @@ function shape(u) {
       pct: spend ? spend.percent : u.extra_usage.utilization,
       current_balance: null,
     };
+  }
+  if (fs.existsSync(DESKTOP_HISTORY)) {
+    try {
+      const raw = fs.readFileSync(DESKTOP_HISTORY, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.samples)) {
+        tool.historyPoints = compute7DayHistory(parsed.samples);
+      }
+    } catch {}
   }
   return tool;
 }
