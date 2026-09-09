@@ -13,6 +13,7 @@ test('tamagotchi collector returns valid pet state and reacts to actions', async
   assert.equal(typeof initial.energy, 'number');
   assert.ok(initial.statusText);
   assert.ok(initial.spriteAscii);
+  assert.ok(initial.dailyQuote);
 
   // Test action feed
   const fed = tamagotchi.performAction('feed');

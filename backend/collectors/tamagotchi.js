@@ -27,6 +27,47 @@ const DEFAULT_PET = {
   bathCount: 5,
 };
 
+const MOTIVATIONAL_QUOTES = [
+  'Codando igual um condenado? Beba água, senão mordo seu pé! ☕🐾',
+  'Se o código não compilar de primeira, culpe o compilador e coma um lanche. 🍖',
+  'Você é mais forte que um loop infinito sem condição de parada! 💪🚀',
+  'Trabalhe duro hoje para poder me encher de petiscos gourmet amanhã! ✨',
+  'Não desista! Se até eu aprendi a não sujar meu visor, você resolve esse bug. 🧼',
+  'Errar é humano, colocar a culpa no cache é sabedoria divina. 🧠',
+  'Um dia sem café é como um pixel sem contraste: simplesmente não funciona. ☕',
+  'Foco no objetivo! Ou finja demência até o deploy passar nos testes. 🎯',
+  'Inspira, expira e não surta com documentação desatualizada. 🧘‍♂️',
+  'Grandes mentes pensam parecido... mentes brilhantes tiram uma soneca antes das 15h. 💤',
+  'Hoje o universo conspira a seu favor! (Ou contra seu branch no Git). 🍀',
+  'A vida é curta demais para dar merge sem rodar os testes antes! ⚡',
+  'Você já sobreviveu a 100% dos seus dias difíceis. Agora me faça carinho! ❤️',
+  'Meta de hoje: fingir que entendeu a reunião e resolver em 3 linhas. 🕶️',
+  'Se o plano A falhar, lembre que o alfabeto tem mais 25 letras. Relaxa! 🔤',
+  'Nem todo herói usa capa, alguns só acham o ponto e vírgula que faltava. 🦸',
+  'Persistência é apertar "Retry" até a API ter vergonha na cara. 🔄',
+  'Acredite no seu potencial! Eu acredito tanto que deixei você codar hoje. 🌟',
+  'Trate seus problemas como commits antigos: rebase e finja que sumiram. 🤫',
+  'Produtividade é a arte de fazer muito enquanto adia o mais chato! 🏃‍♂️',
+  'Coragem! Até um pato de 16 pixels como eu tem orgulho da sua garra. 🦆',
+  'Se nada der certo hoje, pelo menos a bateria do Kindle tá economizada! 🔋',
+  'Sorria! Amanhã tem mais bugs novos que você mesmo vai inventar. 🐛',
+  'Lembre-se: café + silêncio = superpoderes desbloqueados. ☕✨',
+  'Foque no progresso, não na perfeição. Eu sou 16x16 e sou perfeito! 💎',
+  'Seja a pessoa que seu pet acha que você é (ou pelo menos tente). 🐶',
+  'Respira fundo: nenhum erro 500 dura para sempre no servidor. ☀️',
+  'Menos reclamação, mais git push! O sucesso te espera logo ali. 🚀',
+  'Não se preocupe com o futuro, ele ainda não foi renderizado na tela. 📺',
+  'Você é o mestre da sua branch e o arquiteto dos seus deploys! 👑',
+  'Dica de ouro: fechar 40 abas inúteis do browser reduz sua ansiedade em 73%. 🌐',
+];
+
+function getDailyQuote(now = Date.now()) {
+  const d = new Date(now);
+  const startOfYear = new Date(d.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((d - startOfYear) / (86400 * 1000));
+  return MOTIVATIONAL_QUOTES[Math.abs(dayOfYear) % MOTIVATIONAL_QUOTES.length];
+}
+
 function readPetState() {
   try {
     const file = getPetFile();
@@ -126,6 +167,7 @@ function computeDecay(pet) {
     spriteAscii,
     svgMono,
     svgColor,
+    dailyQuote: getDailyQuote(now),
   };
 }
 
@@ -216,6 +258,7 @@ async function collect() {
     bathCount: state.bathCount,
     animSpeed: state.animSpeed || 'normal',
     theme: state.theme || 'lcd',
+    dailyQuote: state.dailyQuote,
   };
 }
 
