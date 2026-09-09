@@ -500,18 +500,18 @@
     }
 
     if (t.tool === 'tamagotchi') {
-      var moodIcon = t.mood === 'happy' ? '✨' : (t.mood === 'hungry' ? '🍲' : (t.mood === 'sleeping' ? '💤' : '🐾'));
+      var moodIcon = t.mood === 'happy' ? '✨' : (t.mood === 'hungry' ? '🍲' : (t.mood === 'sleeping' ? '💤' : (t.mood === 'dirty' ? '🧼' : '🐾')));
       h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 6px">' +
-           '<div><span style="font-size:17px;font-weight:bold">' + (t.name || 'Pixel') + '</span> ' +
+           '<div><span style="font-size:17px;font-weight:bold">' + (t.name || 'Mametchi') + '</span> ' +
            '<span style="font-size:12px;opacity:0.75">Nível ' + (t.level || 1) + ' · ' + (t.ageDays || 1) + 'd</span></div>' +
-           '<div style="font-family:monospace;font-size:15px;font-weight:bold;background:#eee;padding:2px 8px;border-radius:4px;border:1px solid #ccc">' +
-           (t.spriteAscii || '(=^･ω･^=)') +
-           '</div>' +
+           '<div style="font-size:13px;font-style:italic">' + moodIcon + ' ' + (t.statusText || '') + '</div>' +
            '</div>';
 
-      if (opt.showStatus !== false) {
-        h += '<div class="sub" style="font-size:13px;margin-bottom:6px;font-style:italic">' + moodIcon + ' ' + (t.statusText || '') + '</div>';
-      }
+      h += '<div style="display:flex;align-items:center;gap:12px;margin:8px 0 6px">' +
+           '<div style="background:#fff;border:2px solid #000;border-radius:6px;padding:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+           (t.svgMono || ('<div style="font-family:monospace;font-size:14px;padding:8px">' + (t.spriteAscii || '(=^･ω･^=)') + '</div>')) +
+           '</div>' +
+           '<div style="flex:1">';
 
       if (opt.showBars !== false) {
         h += '<div class="row"><div class="label"><span>Fome</span><span>' + (t.hunger || 0) + '%</span></div>' +
@@ -520,7 +520,19 @@
              '<div class="bar"><i style="width:' + (t.happiness || 0) + '%"></i></div></div>';
         h += '<div class="row"><div class="label"><span>Energia</span><span>' + (t.energy || 0) + '%</span></div>' +
              '<div class="bar"><i style="width:' + (t.energy || 0) + '%"></i></div></div>';
+        h += '<div class="row"><div class="label"><span>Limpeza</span><span>' + (t.cleanliness != null ? t.cleanliness : 100) + '%</span></div>' +
+             '<div class="bar"><i style="width:' + (t.cleanliness != null ? t.cleanliness : 100) + '%"></i></div></div>';
       }
+      h += '</div></div>';
+
+      // Botões Retrô de Ação no Box
+      h += '<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-top:8px;text-align:center">' +
+           '<div style="border:1.5px solid #000;border-radius:4px;padding:4px 2px;font-size:11px;font-weight:bold;background:#fafafa">🍖 Alimentar</div>' +
+           '<div style="border:1.5px solid #000;border-radius:4px;padding:4px 2px;font-size:11px;font-weight:bold;background:#fafafa">🎾 Brincar</div>' +
+           '<div style="border:1.5px solid #000;border-radius:4px;padding:4px 2px;font-size:11px;font-weight:bold;background:#fafafa">🧼 Banho</div>' +
+           '<div style="border:1.5px solid #000;border-radius:4px;padding:4px 2px;font-size:11px;font-weight:bold;background:#fafafa">❤️ Carinho</div>' +
+           '</div>';
+
       return h + '</div>';
     }
 

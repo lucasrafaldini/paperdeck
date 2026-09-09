@@ -192,7 +192,8 @@ export interface DashboardApi {
   saveWidgetOptions: (widgetOptions: WidgetOptionsMap) => Promise<DashboardWidgetsConfig>
   saveLayout: (layout: DashboardLayoutConfig, extra?: { activeWidgets?: string[]; widgetOptions?: WidgetOptionsMap; customSites?: CustomSite[] }) => Promise<DashboardWidgetsConfig>
   saveCustomSites: (sites: CustomSite[]) => Promise<DashboardWidgetsConfig>
-  petAction: (action: 'feed' | 'pet' | 'play') => Promise<unknown>
+  petAction: (action: 'feed' | 'pet' | 'play' | 'bath' | 'setCharacter' | 'setName', payload?: Record<string, unknown>) => Promise<unknown>
+  getPetState: () => Promise<unknown>
   getNotification: () => Promise<ActiveNotification | null>
   sendNotification: (message: string, durationSec?: number) => Promise<ActiveNotification | null>
   clearNotification: () => Promise<void>

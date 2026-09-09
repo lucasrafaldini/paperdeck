@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PreviewFrame from '../PreviewFrame'
 import type { Translator } from '../i18n'
 import type { KindleLiveInfo, SupportedLanguage } from '../../../shared/types'
 import type { NavKey } from '../types'
 import { ActionButton } from '../components/ActionButton'
+import { TamagotchiBox } from '../components/TamagotchiBox'
 import { LayoutEditor } from './LayoutEditor'
 
 interface PanelViewProps {
@@ -28,7 +29,17 @@ export function PanelView({
   onError,
 }: PanelViewProps): React.JSX.Element {
   const [isEditingLayout, setIsEditingLayout] = useState(false)
+  const [showPetBox, setShowPetBox] = useState(false)
   const hasBattery = kindleLive && kindleLive.battery != null
+
+  useEffect(() => {
+    // Se o widget de tamagotchi estiver ativo, abre por padrão
+    void window.dashboard?.getWidgets?.().then((cfg) => {
+      if (cfg?.activeWidgets?.includes('tamagotchi')) {
+        setShowPetBox(true)
+      }
+    }).catch(() => {})
+  }, [])
 
   return (
     <section className="dashboard-grid">
@@ -74,6 +85,13 @@ export function PanelView({
 
         <div style={{ display: 'flex', gap: '8px' }}>
           <ActionButton
+            icon="slider"
+            className={showPetBox ? '' : 'ghost'}
+            onClick={() => setShowPetBox(!showPetBox)}
+          >
+            🐱 Mascote
+          </ActionButton>
+          <ActionButton
             icon={isEditingLayout ? 'check' : 'slider'}
             className={isEditingLayout ? '' : 'ghost'}
             onClick={() => setIsEditingLayout(!isEditingLayout)}
@@ -96,6 +114,12 @@ export function PanelView({
           </ActionButton>
         </div>
       </div>
+
+      {showPetBox && !isEditingLayout && (
+        <div style={{ marginBottom: '14px' }}>
+          <TamagotchiBox onAction={() => void window.dashboard?.renderNow?.()} />
+        </div>
+      )}
 
       {isEditingLayout ? (
         <LayoutEditor

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CustomSite, DashboardBlock, DashboardLayoutConfig, DashboardWidgetsConfig, WidgetOptionsMap } from '../../../shared/types'
 import { ActionButton } from '../components/ActionButton'
 import { Icon } from '../components/Icon'
+import { TamagotchiBox } from '../components/TamagotchiBox'
 import type { Translator } from '../i18n'
 
 interface LayoutEditorProps {
@@ -167,7 +168,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
     })
   }
 
-  const handlePetAction = async (action: 'feed' | 'pet' | 'play') => {
+  const handlePetAction = async (action: 'feed' | 'pet' | 'play' | 'bath') => {
     try {
       await window.dashboard.petAction(action)
       const label =
@@ -175,7 +176,9 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
           ? 'Mascote alimentado! 🍖'
           : action === 'pet'
             ? 'Carinho recebido! ❤️'
-            : 'Mascote brincou com você! 🎾'
+            : action === 'bath'
+              ? 'Banho tomado! Mascote limpinho! 🧼'
+              : 'Mascote brincou com você! 🎾'
       setPetMsg(label)
       setTimeout(() => setPetMsg(null), 3500)
     } catch (err) {
@@ -441,14 +444,8 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                       <div>▶ Música atual tocando · Álbum · Barra de progresso</div>
                     )}
                     {block.tool === 'tamagotchi' && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold' }}>Pixel · Nível 3 · Feliz ✨</div>
-                          <div style={{ fontSize: '11px', opacity: 0.8 }}>Fome: 25% · Felicidade: 90% · Energia: 80%</div>
-                        </div>
-                        <div style={{ fontFamily: 'monospace', fontWeight: 'bold', background: '#eee', padding: '2px 6px', borderRadius: '4px' }}>
-                          (=^･ω･^=)
-                        </div>
+                      <div onMouseDown={(e) => e.stopPropagation()} style={{ width: '100%' }}>
+                        <TamagotchiBox compact={true} showCharacterPicker={true} />
                       </div>
                     )}
                     {block.tool === 'sitescraper' && (
@@ -614,30 +611,38 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                     {petMsg}
                   </div>
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                   <button
                     type="button"
                     className="ui-button ghost"
-                    style={{ justifyContent: 'flex-start', minHeight: '32px', fontSize: '12px' }}
+                    style={{ fontSize: '12px' }}
                     onClick={() => void handlePetAction('feed')}
                   >
-                    🍖 Alimentar (+comida)
+                    🍖 Alimentar
                   </button>
                   <button
                     type="button"
                     className="ui-button ghost"
-                    style={{ justifyContent: 'flex-start', minHeight: '32px', fontSize: '12px' }}
-                    onClick={() => void handlePetAction('pet')}
-                  >
-                    ❤️ Fazer Carinho (+felicidade)
-                  </button>
-                  <button
-                    type="button"
-                    className="ui-button ghost"
-                    style={{ justifyContent: 'flex-start', minHeight: '32px', fontSize: '12px' }}
+                    style={{ fontSize: '12px' }}
                     onClick={() => void handlePetAction('play')}
                   >
-                    🎾 Brincar (+diversão)
+                    🎾 Brincar
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-button ghost"
+                    style={{ fontSize: '12px' }}
+                    onClick={() => void handlePetAction('bath')}
+                  >
+                    🧼 Dar banho
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-button ghost"
+                    style={{ fontSize: '12px' }}
+                    onClick={() => void handlePetAction('pet')}
+                  >
+                    ❤️ Carinho
                   </button>
                 </div>
               </div>

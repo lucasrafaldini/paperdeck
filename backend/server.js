@@ -197,7 +197,7 @@ function createServer(deps = {}) {
           try {
             const parsed = JSON.parse(body || '{}');
             const tamagotchiCollector = require('./collectors/tamagotchi');
-            const updated = tamagotchiCollector.performAction(parsed.action);
+            const updated = tamagotchiCollector.performAction(parsed.action, parsed);
             send(res, 200, JSON.stringify({ ok: true, pet: updated }), { 'Content-Type': MIME['.json'] });
           } catch (e) {
             send(res, 400, JSON.stringify({ error: String(e.message || e) }), { 'Content-Type': MIME['.json'] });
@@ -209,6 +209,10 @@ function createServer(deps = {}) {
       return tamagotchiCollector.collect().then((pet) => {
         send(res, 200, JSON.stringify(pet), { 'Content-Type': MIME['.json'] });
       });
+    }
+    if (url === '/api/tamagotchi/characters') {
+      const tamagotchiCollector = require('./collectors/tamagotchi');
+      return send(res, 200, JSON.stringify(tamagotchiCollector.getCharacters ? tamagotchiCollector.getCharacters() : []), { 'Content-Type': MIME['.json'] });
     }
     if (url === '/api/notify') {
       if (req.method === 'POST') {

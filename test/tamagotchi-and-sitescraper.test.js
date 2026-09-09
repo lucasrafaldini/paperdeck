@@ -21,6 +21,16 @@ test('tamagotchi collector returns valid pet state and reacts to actions', async
   // Test action pet
   const petted = tamagotchi.performAction('pet');
   assert.ok(petted.happiness >= fed.happiness);
+
+  // Test action bath
+  const bathed = tamagotchi.performAction('bath');
+  assert.equal(bathed.cleanliness, 100);
+
+  // Test action setCharacter
+  const switched = tamagotchi.performAction('setCharacter', { character: 'kuchipatchi' });
+  assert.equal(switched.character, 'kuchipatchi');
+  assert.equal(switched.name, 'Kuchipatchi');
+  assert.ok(switched.svgMono.includes('<svg'));
 });
 
 test('sitescraper collector returns valid site data structure', async () => {

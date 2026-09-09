@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AuthLoginTool,
+  CustomSite,
   DashboardApi,
   DashboardConfigInput,
   LanguagePreference,
@@ -28,8 +29,9 @@ const api: DashboardApi = {
   saveWidgets: (activeWidgets: string[]) => ipcRenderer.invoke('widgets:save', activeWidgets),
   saveWidgetOptions: (widgetOptions) => ipcRenderer.invoke('widgets:saveOptions', widgetOptions),
   saveLayout: (layout, extra) => ipcRenderer.invoke('widgets:saveLayout', layout, extra),
-  saveCustomSites: (sites) => ipcRenderer.invoke('widgets:saveCustomSites', sites),
-  petAction: (action) => ipcRenderer.invoke('tamagotchi:action', action),
+  saveCustomSites: (sites: CustomSite[]) => ipcRenderer.invoke('widgets:saveCustomSites', sites),
+  petAction: (action, payload) => ipcRenderer.invoke('tamagotchi:action', action, payload),
+  getPetState: () => ipcRenderer.invoke('tamagotchi:get'),
   getNotification: () => ipcRenderer.invoke('notify:get'),
   sendNotification: (message: string, durationSec?: number) => ipcRenderer.invoke('notify:set', message, durationSec),
   clearNotification: () => ipcRenderer.invoke('notify:clear'),

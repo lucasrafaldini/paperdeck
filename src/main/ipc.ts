@@ -222,12 +222,12 @@ export function registerIpc(handlers: IpcHandlers): void {
     return result
   })
 
-  ipcMain.handle('tamagotchi:action', async (_event, action: 'feed' | 'pet' | 'play'): Promise<unknown> => {
+  ipcMain.handle('tamagotchi:action', async (_event, action: string, payload?: Record<string, unknown>): Promise<unknown> => {
     try {
       const res = await fetch(`${BASE_URL}/api/tamagotchi/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...(payload || {}) }),
         signal: AbortSignal.timeout(3000),
       })
       if (res.ok) {
@@ -238,11 +238,23 @@ export function registerIpc(handlers: IpcHandlers): void {
     } catch {}
     const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
     const tamagotchiCollector = require(join(root, 'backend', 'collectors', 'tamagotchi.js')) as {
-      performAction: (act: string) => unknown
+      performAction: (act: string, pl?: Record<string, unknown>) => unknown
     }
-    const res = tamagotchiCollector.performAction(action)
+    const res = tamagotchiCollector.performAction(action, payload)
     void renderDashboard().catch(() => {})
     return res
+  })
+
+  ipcMain.handle('tamagotchi:get', async (): Promise<unknown> => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/tamagotchi/action`, { signal: AbortSignal.timeout(3000) })
+      if (res.ok) return await res.json()
+    } catch {}
+    const root = app.getAppPath().replace(/[/\\]dist([/\\]main)?$/, '')
+    const tamagotchiCollector = require(join(root, 'backend', 'collectors', 'tamagotchi.js')) as {
+      collect: () => Promise<unknown>
+    }
+    return tamagotchiCollector.collect()
   })
 
   ipcMain.handle('notify:get', async (): Promise<ActiveNotification | null> => {
