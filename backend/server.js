@@ -309,8 +309,23 @@ function createServer(deps = {}) {
         kindleStatus.clientIp = clientIp;
         saveKindleStatus();
       }
+      const now = new Date();
+      const localHour = now.getHours();
+      const isNight = (localHour >= 1 && localHour < 10) ? '1' : '0';
+      let sleepSecs = 180;
+      if (isNight === '1') {
+        const target10 = new Date(now);
+        target10.setHours(10, 0, 0, 0);
+        const diffSecs = Math.max(60, Math.round((target10.getTime() - now.getTime()) / 1000));
+        sleepSecs = Math.min(3600, diffSecs);
+      }
       return fs.readFile(dashImagePath, (error, data) =>
-        error ? send(res, 404, 'no png') : send(res, 200, data, { 'Content-Type': MIME['.png'] }));
+        error ? send(res, 404, 'no png') : send(res, 200, data, {
+          'Content-Type': MIME['.png'],
+          'X-Kindle-Night': isNight,
+          'X-Kindle-Sleep': String(sleepSecs),
+          'X-Kindle-Interval': '180',
+        }));
     }
     if (url.startsWith('/kindle/')) {
       const root = path.resolve(__dirname, '..', 'kindle');

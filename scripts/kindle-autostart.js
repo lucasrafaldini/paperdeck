@@ -39,7 +39,7 @@ function dashboardUrl(value = process.env.DASHBOARD_URL) {
 function environmentContents(env = process.env) {
   return [
     `PC=${shellQuote(dashboardUrl(env.DASHBOARD_URL))}`,
-    `INTERVAL=${shellQuote(positiveInt(env.KINDLE_REFRESH_INTERVAL, 45))}`,
+    `INTERVAL=${shellQuote(positiveInt(env.KINDLE_REFRESH_INTERVAL, 180))}`,
     `FULL_EVERY=${shellQuote(positiveInt(env.KINDLE_FULL_REFRESH_EVERY, 20))}`,
     `WIFI_RETRY_EVERY=${shellQuote(positiveInt(env.KINDLE_WIFI_RETRY_EVERY, 3))}`,
     '',
