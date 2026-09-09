@@ -46,26 +46,27 @@ export function formatExpiry(value: string | undefined, language: SupportedLangu
 export function formFromConfig(config: DashboardConfig): ConfigForm {
   return {
     dashboardUrl: config.dashboardUrl,
-    kindleFullRefreshEvery: String(config.kindleFullRefreshEvery),
-    kindleIp: config.kindleIp,
+    kindleFullRefreshEvery: String(config.kindleFullRefreshEvery || 20),
+    kindleIp: config.kindleIp || '192.168.0.40',
     kindlePassword: '',
-    kindlePort: String(config.kindlePort),
-    kindleRefreshInterval: String(config.kindleRefreshInterval),
-    kindleUser: config.kindleUser,
-    kindleWifiRetryEvery: String(config.kindleWifiRetryEvery),
+    kindlePort: String(config.kindlePort || 22),
+    kindleRefreshInterval: String(config.kindleRefreshInterval || 180),
+    kindleUser: config.kindleUser || 'root',
+    kindleWifiRetryEvery: String(config.kindleWifiRetryEvery || 3),
   }
 }
 
-export function inputFromForm(form: ConfigForm): DashboardConfigInput {
+export function inputFromForm(form: ConfigForm, extra?: Partial<DashboardConfigInput>): DashboardConfigInput {
   return {
     dashboardUrl: form.dashboardUrl,
-    kindleFullRefreshEvery: Number.parseInt(form.kindleFullRefreshEvery, 10),
-    kindleIp: form.kindleIp,
+    kindleFullRefreshEvery: Number.parseInt(form.kindleFullRefreshEvery, 10) || 20,
+    kindleIp: form.kindleIp || '192.168.0.40',
     kindlePassword: form.kindlePassword,
-    kindlePort: Number.parseInt(form.kindlePort, 10),
-    kindleRefreshInterval: Number.parseInt(form.kindleRefreshInterval, 10),
-    kindleUser: form.kindleUser,
-    kindleWifiRetryEvery: Number.parseInt(form.kindleWifiRetryEvery, 10),
+    kindlePort: Number.parseInt(form.kindlePort, 10) || 22,
+    kindleRefreshInterval: Number.parseInt(form.kindleRefreshInterval, 10) || 180,
+    kindleUser: form.kindleUser || 'root',
+    kindleWifiRetryEvery: Number.parseInt(form.kindleWifiRetryEvery, 10) || 3,
+    ...extra,
   }
 }
 

@@ -20,13 +20,12 @@ import { text } from './i18n'
 
 function sshOptions(config: StoredDashboardConfig): SshOptions {
   const password = decryptPassword(config)
-  if (!password) throw new Error(text('sshPasswordMissing'))
 
   return {
-    host: config.kindleIp,
-    password,
-    port: config.kindlePort,
-    username: config.kindleUser,
+    host: config.kindleIp || '192.168.0.40',
+    password: password || undefined,
+    port: config.kindlePort || 22,
+    username: config.kindleUser || 'root',
   }
 }
 

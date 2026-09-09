@@ -1038,6 +1038,99 @@ button.danger:hover:not(:disabled) {
   color: var(--text-soft);
 }
 
+.kindle-devices-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.devices-intro-banner {
+  padding: 1.25rem 1.5rem;
+}
+
+.devices-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.device-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.device-card.active-device {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.device-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.device-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.device-ip-tag {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  margin-top: 0.2rem;
+}
+
+.device-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  background: var(--bg-subtle, rgba(0, 0, 0, 0.03));
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+.device-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row-label {
+  color: var(--text-soft);
+}
+
+.row-val {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.device-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.add-device-form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 @media (max-width: 1180px) {
   .app-shell {
     grid-template-columns: 200px minmax(0, 1fr);

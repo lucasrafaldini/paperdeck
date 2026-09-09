@@ -152,7 +152,22 @@
     "batteryLevel": "Bateria: {value}%",
     "charging": "Carregando",
     "notCharging": "Na bateria",
-    "updatedAt": "Atualizado"
+    "updatedAt": "Atualizado",
+    "kindleDevicesTab": "Dispositivos",
+    "kindleDevicesTitle": "Kindles Cadastrados",
+    "kindleDevicesSub": "Todos os Kindles cadastrados recebem e exibem o mesmo dashboard sincronizado.",
+    "addKindle": "Adicionar Kindle",
+    "addingKindle": "Adicionando...",
+    "deviceName": "Nome do Kindle",
+    "deviceNamePlaceholder": "ex.: Kindle da Mesa, Kindle da Sala",
+    "deviceActive": "Ativo para Diagnóstico",
+    "selectDevice": "Selecionar para Ações",
+    "removeDevice": "Remover",
+    "noDevices": "Nenhum Kindle cadastrado.",
+    "deviceAdded": "Kindle cadastrado com sucesso",
+    "deviceRemoved": "Kindle removido",
+    "deviceSelected": "Kindle ativo selecionado",
+    "activeBadge": "Em uso"
   },
   "main": {
     "configInvalid": "Configuração inválida",

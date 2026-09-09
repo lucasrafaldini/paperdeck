@@ -45,7 +45,9 @@ echo $$ > "$PIDFILE"
 turn_off_frontlight() {
   lipc-set-prop com.lab126.powerd flWorkflow 0 2>/dev/null
   lipc-set-prop com.lab126.powerd flIntensity 0 2>/dev/null
-  echo 0 > /sys/class/backlight/mxc_msp430_fl.0/brightness 2>/dev/null || true
+  if [ -d /sys/class/backlight/mxc_msp430_fl.0 ]; then
+    echo 0 > /sys/class/backlight/mxc_msp430_fl.0/brightness 2>/dev/null
+  fi
 }
 
 cleanup() {
@@ -149,10 +151,14 @@ check_auto_update() {
     NEW_HASH=$(md5sum < /mnt/us/dash-loop.sh.new 2>/dev/null | cut -d' ' -f1)
     CUR_HASH=$(md5sum < /mnt/us/dash-loop.sh 2>/dev/null | cut -d' ' -f1)
     if [ -n "$NEW_HASH" ] && [ -n "$CUR_HASH" ] && [ "$NEW_HASH" != "$CUR_HASH" ]; then
-      echo "[dash-loop] nova versao detectada ($NEW_HASH != $CUR_HASH), atualizando..."
-      mv "/mnt/us/dash-loop.sh.new" "/mnt/us/dash-loop.sh"
-      chmod 755 "/mnt/us/dash-loop.sh"
-      exec /bin/sh "/mnt/us/dash-loop.sh"
+      if sh -n "/mnt/us/dash-loop.sh.new" 2>/dev/null; then
+        echo "[dash-loop] nova versao valida detectada ($NEW_HASH != $CUR_HASH), atualizando..."
+        mv "/mnt/us/dash-loop.sh.new" "/mnt/us/dash-loop.sh"
+        chmod 755 "/mnt/us/dash-loop.sh"
+        exec /bin/sh "/mnt/us/dash-loop.sh"
+      else
+        echo "[dash-loop] erro de sintaxe na nova versao baixada, abortando atualizacao"
+      fi
     fi
   fi
   rm -f "/mnt/us/dash-loop.sh.new" 2>/dev/null
@@ -213,7 +219,14 @@ while [ ! -f "$STOP" ]; do
   i=$((i + 1))
 
   # Escolhe proximo sono (Deep Sleep entre 01:00 e 10:00, ou sleep normal diurno)
-  if [ "$SERVER_NIGHT" = "1" ] || ( [ -z "$SERVER_NIGHT" ] && is_night_time ); then
+  is_night=0
+  if [ "$SERVER_NIGHT" = "1" ]; then
+    is_night=1
+  elif [ -z "$SERVER_NIGHT" ] && is_night_time; then
+    is_night=1
+  fi
+
+  if [ "$is_night" = "1" ]; then
     NIGHT_SLEEP="${SERVER_SLEEP:-$(get_night_sleep_seconds)}"
     enter_deep_sleep "$NIGHT_SLEEP"
   else

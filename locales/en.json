@@ -152,7 +152,22 @@
     "batteryLevel": "Battery: {value}%",
     "charging": "Charging",
     "notCharging": "On battery",
-    "updatedAt": "Updated"
+    "updatedAt": "Updated",
+    "kindleDevicesTab": "Devices",
+    "kindleDevicesTitle": "Registered Kindles",
+    "kindleDevicesSub": "All registered Kindles receive and display the same synchronized dashboard.",
+    "addKindle": "Add Kindle",
+    "addingKindle": "Adding...",
+    "deviceName": "Kindle Name",
+    "deviceNamePlaceholder": "e.g. Desk Kindle, Living Room Kindle",
+    "deviceActive": "Active for Diagnostics",
+    "selectDevice": "Select for Actions",
+    "removeDevice": "Remove",
+    "noDevices": "No Kindles registered.",
+    "deviceAdded": "Kindle registered successfully",
+    "deviceRemoved": "Kindle removed",
+    "deviceSelected": "Active Kindle changed",
+    "activeBadge": "Active"
   },
   "main": {
     "configInvalid": "Invalid configuration",

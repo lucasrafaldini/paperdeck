@@ -21,6 +21,7 @@ import type {
   AuthLoginTool,
   AuthStatus,
   DashboardConfig,
+  KindleDevice,
   KindleLiveInfo,
   KindleScriptStatus,
   KindleStatus,
@@ -40,7 +41,7 @@ export default function App(): React.JSX.Element {
   const [backendState, setBackendState] = useState<BackendState>('checking')
   const [lastRender, setLastRender] = useState<string | null>(null)
   const [nav, setNav] = useState<NavKey>('configuracoes')
-  const [kindleTab, setKindleTab] = useState<KindleTab>('config')
+  const [kindleTab, setKindleTab] = useState<KindleTab>('dispositivos')
   const [rendering, setRendering] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingLanguage, setSavingLanguage] = useState(false)
@@ -215,7 +216,10 @@ export default function App(): React.JSX.Element {
     setSaving(true)
     clearNotice('kindle')
     try {
-      const saved = await window.dashboard.saveConfig(inputFromForm(form))
+      const saved = await window.dashboard.saveConfig(inputFromForm(form, {
+        kindleDevices: config?.kindleDevices,
+        activeKindleId: config?.activeKindleId,
+      }))
       setConfig(saved)
       setForm(formFromConfig(saved))
       showMessage('kindle', t('configSaved'))
@@ -223,6 +227,109 @@ export default function App(): React.JSX.Element {
     } catch (saveError) {
       showError('kindle', saveError instanceof Error ? saveError.message : String(saveError))
       return null
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleAddKindleDevice(device: { name: string; ip: string; port: number; user: string }): Promise<void> {
+    if (!config) return
+    const id = 'k_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
+    const newDevice: KindleDevice = {
+      id,
+      name: device.name.trim() || `Kindle ${device.ip}`,
+      ip: device.ip.trim(),
+      port: device.port || 22,
+      user: device.user.trim() || 'root',
+    }
+    const currentList = config.kindleDevices && config.kindleDevices.length > 0
+      ? config.kindleDevices
+      : [
+          {
+            id: 'kindle-1',
+            name: 'Kindle Principal (Mesa)',
+            ip: config.kindleIp || '192.168.0.40',
+            port: config.kindlePort || 22,
+            user: config.kindleUser || 'root',
+          },
+        ]
+    const devices = [...currentList, newDevice]
+    setSaving(true)
+    clearNotice('kindle')
+    try {
+      const updated = await window.dashboard.saveConfig({
+        dashboardUrl: config.dashboardUrl,
+        kindleIp: config.kindleIp,
+        kindlePort: config.kindlePort,
+        kindleUser: config.kindleUser,
+        kindleRefreshInterval: config.kindleRefreshInterval,
+        kindleFullRefreshEvery: config.kindleFullRefreshEvery,
+        kindleWifiRetryEvery: config.kindleWifiRetryEvery,
+        kindleDevices: devices,
+        activeKindleId: config.activeKindleId || 'kindle-1',
+      })
+      setConfig(updated)
+      setForm(formFromConfig(updated))
+      showMessage('kindle', t('deviceAdded'))
+    } catch (err) {
+      showError('kindle', err instanceof Error ? err.message : String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSelectKindleDevice(id: string): Promise<void> {
+    if (!config) return
+    const target = (config.kindleDevices || []).find((d) => d.id === id)
+    if (!target) return
+    setSaving(true)
+    clearNotice('kindle')
+    try {
+      const updated = await window.dashboard.saveConfig({
+        dashboardUrl: config.dashboardUrl,
+        kindleIp: target.ip,
+        kindlePort: target.port || 22,
+        kindleUser: target.user || 'root',
+        kindleRefreshInterval: config.kindleRefreshInterval,
+        kindleFullRefreshEvery: config.kindleFullRefreshEvery,
+        kindleWifiRetryEvery: config.kindleWifiRetryEvery,
+        kindleDevices: config.kindleDevices,
+        activeKindleId: id,
+      })
+      setConfig(updated)
+      setForm(formFromConfig(updated))
+      showMessage('kindle', t('deviceSelected'))
+    } catch (err) {
+      showError('kindle', err instanceof Error ? err.message : String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleRemoveKindleDevice(id: string): Promise<void> {
+    if (!config) return
+    const remaining = (config.kindleDevices || []).filter((d) => d.id !== id)
+    const nextActive = config.activeKindleId === id ? remaining[0]?.id : config.activeKindleId
+    const activeDevice = remaining.find((d) => d.id === nextActive) || remaining[0]
+    setSaving(true)
+    clearNotice('kindle')
+    try {
+      const updated = await window.dashboard.saveConfig({
+        dashboardUrl: config.dashboardUrl,
+        kindleIp: activeDevice?.ip || config.kindleIp,
+        kindlePort: activeDevice?.port || config.kindlePort,
+        kindleUser: activeDevice?.user || config.kindleUser,
+        kindleRefreshInterval: config.kindleRefreshInterval,
+        kindleFullRefreshEvery: config.kindleFullRefreshEvery,
+        kindleWifiRetryEvery: config.kindleWifiRetryEvery,
+        kindleDevices: remaining,
+        activeKindleId: nextActive,
+      })
+      setConfig(updated)
+      setForm(formFromConfig(updated))
+      showMessage('kindle', t('deviceRemoved'))
+    } catch (err) {
+      showError('kindle', err instanceof Error ? err.message : String(err))
     } finally {
       setSaving(false)
     }
@@ -471,12 +578,16 @@ export default function App(): React.JSX.Element {
               installOutput={installOutput}
               installing={installing}
               kindle={kindle}
+              kindleLive={kindleLive}
               kindleScript={kindleScript}
               kindleTab={kindleTab}
+              onAddDevice={(device) => handleAddKindleDevice(device)}
               onCheckKindle={() => void handleCheckKindle()}
               onInstall={() => void handleInstallKindle()}
               onKindleTab={setKindleTab}
+              onRemoveDevice={(id) => handleRemoveKindleDevice(id)}
               onScript={(action) => void handleKindleScript(action)}
+              onSelectDevice={(id) => handleSelectKindleDevice(id)}
               onSubmitConfig={() => void saveCurrentConfig()}
               onUninstall={() => void handleUninstallKindle()}
               onUpdateForm={updateForm}

@@ -1,6 +1,6 @@
 export type BackendState = 'checking' | 'online' | 'offline'
 export type NavKey = 'painel' | 'widgets' | 'notificacoes' | 'kindle' | 'logins' | 'configuracoes'
-export type KindleTab = 'config' | 'diagnostico'
+export type KindleTab = 'dispositivos' | 'config' | 'diagnostico'
 export type KindleScriptAction = 'start' | 'stop'
 
 export type IconName =
@@ -15,6 +15,8 @@ export type IconName =
   | 'trash'
   | 'play'
   | 'stop'
+  | 'plus'
+  | 'edit'
   | 'search'
   | 'github'
   | 'globe'

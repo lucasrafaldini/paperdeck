@@ -30,7 +30,7 @@ export interface SshExecResult {
 
 export interface SshOptions {
   host: string
-  password: string
+  password?: string
   port: number
   username: string
 }

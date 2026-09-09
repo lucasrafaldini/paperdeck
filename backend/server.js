@@ -25,11 +25,12 @@ function getKindleStatusFile() {
   return path.join(__dirname, '..', 'out', 'kindle-status.json');
 }
 
-let kindleStatus = { battery: null, isCharging: false, lastSeen: null, clientIp: null };
+let kindleStatus = { battery: null, isCharging: false, lastSeen: null, clientIp: null, devices: {} };
 try {
   const statusFile = getKindleStatusFile();
   if (fs.existsSync(statusFile)) {
     kindleStatus = { ...kindleStatus, ...JSON.parse(fs.readFileSync(statusFile, 'utf8')) };
+    if (!kindleStatus.devices) kindleStatus.devices = {};
   }
 } catch {}
 
@@ -303,10 +304,19 @@ function createServer(deps = {}) {
       const q = new URLSearchParams(requestUrl.split('?')[1] || '');
       const bat = q.get('bat');
       if (bat !== null && bat !== '') {
-        kindleStatus.battery = Number.parseInt(bat, 10);
-        kindleStatus.isCharging = q.get('chg') === '1';
+        const battery = Number.parseInt(bat, 10);
+        const isCharging = q.get('chg') === '1';
+        kindleStatus.battery = battery;
+        kindleStatus.isCharging = isCharging;
         kindleStatus.lastSeen = Date.now();
         kindleStatus.clientIp = clientIp;
+        if (!kindleStatus.devices) kindleStatus.devices = {};
+        kindleStatus.devices[clientIp] = {
+          clientIp,
+          battery,
+          isCharging,
+          lastSeen: Date.now(),
+        };
         saveKindleStatus();
       }
       const now = new Date();

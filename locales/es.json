@@ -113,7 +113,22 @@
     "uninstall": "Desinstalar",
     "uninstallBusy": "Desinstalando...",
     "uninstallConfirm": "¿Desinstalar los scripts de Kindle? El autostart del dashboard será removido del dispositivo.",
-    "updatedAt": "Actualizado"
+    "updatedAt": "Actualizado",
+    "kindleDevicesTab": "Dispositivos",
+    "kindleDevicesTitle": "Kindles Registrados",
+    "kindleDevicesSub": "Todos los Kindles registrados reciben y muestran el mismo panel sincronizado.",
+    "addKindle": "Añadir Kindle",
+    "addingKindle": "Añadiendo...",
+    "deviceName": "Nombre del Kindle",
+    "deviceNamePlaceholder": "ej.: Kindle del Escritorio",
+    "deviceActive": "Activo para Diagnóstico",
+    "selectDevice": "Seleccionar para Acciones",
+    "removeDevice": "Eliminar",
+    "noDevices": "Ningún Kindle registrado.",
+    "deviceAdded": "Kindle registrado con éxito",
+    "deviceRemoved": "Kindle eliminado",
+    "deviceSelected": "Kindle activo seleccionado",
+    "activeBadge": "En uso"
   },
   "main": {
     "configInvalid": "Configuración inválida",

@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import { dirname } from 'node:path'
 import { app, safeStorage } from 'electron'
-import type { DashboardConfig, LanguagePreference } from '../shared/types'
+import type { DashboardConfig, KindleDevice, LanguagePreference } from '../shared/types'
 import { positiveInt } from './constants'
 import { applyLanguagePreference, normalizeLanguagePreference, text } from './i18n'
 import { configPath, defaultDashboardUrl } from './paths'
@@ -21,6 +21,8 @@ export interface StoredDashboardConfig {
   pictureInPicture: boolean
   pictureInPictureScale: number
   setupComplete: boolean
+  kindleDevices?: KindleDevice[]
+  activeKindleId?: string
 }
 
 // Multiplicadores de tamanho oferecidos na UI para a janela PiP.
@@ -39,18 +41,31 @@ export function currentConfig(): StoredDashboardConfig | null {
 }
 
 function defaultStoredConfig(): StoredDashboardConfig {
+  const defaultDevices: KindleDevice[] = [
+    {
+      id: 'kindle-1',
+      name: 'Kindle Principal (Mesa)',
+      ip: '192.168.0.40',
+      port: 22,
+      user: 'root',
+      notes: 'Kindle Touch 3 (KT3)',
+    },
+  ]
+
   return {
     dashboardUrl: defaultDashboardUrl(),
     language: 'system',
     kindleFullRefreshEvery: 20,
-    kindleIp: '',
+    kindleIp: '192.168.0.40',
     kindlePort: 22,
     kindleRefreshInterval: 180,
-    kindleUser: '',
+    kindleUser: 'root',
     kindleWifiRetryEvery: 3,
     pictureInPicture: false,
     pictureInPictureScale: DEFAULT_PIP_SCALE,
-    setupComplete: false,
+    setupComplete: true,
+    kindleDevices: defaultDevices,
+    activeKindleId: 'kindle-1',
   }
 }
 
@@ -95,6 +110,8 @@ export function publicConfig(config: StoredDashboardConfig): DashboardConfig {
     pictureInPicture: config.pictureInPicture,
     pictureInPictureScale: config.pictureInPictureScale,
     setupComplete: config.setupComplete,
+    kindleDevices: config.kindleDevices,
+    activeKindleId: config.activeKindleId,
   }
 }
 
@@ -104,22 +121,41 @@ export async function loadConfig(): Promise<StoredDashboardConfig> {
   const defaults = defaultStoredConfig()
   try {
     const raw = JSON.parse(await fs.readFile(configPath(), 'utf8')) as Partial<StoredDashboardConfig>
+    const kindleIp = typeof raw.kindleIp === 'string' && raw.kindleIp.trim() ? raw.kindleIp.trim() : defaults.kindleIp
+    const kindleUser = typeof raw.kindleUser === 'string' && raw.kindleUser.trim() ? raw.kindleUser.trim() : defaults.kindleUser
+    const kindlePort = positiveInt(String(raw.kindlePort ?? ''), defaults.kindlePort)
+    const kindleDevices: KindleDevice[] = Array.isArray(raw.kindleDevices) && raw.kindleDevices.length > 0
+      ? raw.kindleDevices
+      : [
+          {
+            id: 'kindle-1',
+            name: 'Kindle Principal (Mesa)',
+            ip: kindleIp,
+            port: kindlePort,
+            user: kindleUser,
+            notes: 'Kindle Touch 3 (KT3)',
+          },
+        ]
+    const activeKindleId = typeof raw.activeKindleId === 'string' && raw.activeKindleId ? raw.activeKindleId : kindleDevices[0].id
+
     dashboardConfig = {
       ...defaults,
       dashboardUrl: typeof raw.dashboardUrl === 'string' ? raw.dashboardUrl : defaults.dashboardUrl,
       language: normalizeLanguagePreference(raw.language),
       kindleFullRefreshEvery: positiveInt(String(raw.kindleFullRefreshEvery ?? ''), defaults.kindleFullRefreshEvery),
-      kindleIp: typeof raw.kindleIp === 'string' ? raw.kindleIp : defaults.kindleIp,
+      kindleIp,
       kindlePasswordEncoding: raw.kindlePasswordEncoding,
       kindlePasswordEncrypted: typeof raw.kindlePasswordEncrypted === 'string' ? raw.kindlePasswordEncrypted : undefined,
       kindlePasswordPlain: typeof raw.kindlePasswordPlain === 'string' ? raw.kindlePasswordPlain : undefined,
-      kindlePort: positiveInt(String(raw.kindlePort ?? ''), defaults.kindlePort),
+      kindlePort,
       kindleRefreshInterval: positiveInt(String(raw.kindleRefreshInterval ?? ''), defaults.kindleRefreshInterval),
-      kindleUser: typeof raw.kindleUser === 'string' ? raw.kindleUser : defaults.kindleUser,
+      kindleUser,
       kindleWifiRetryEvery: positiveInt(String(raw.kindleWifiRetryEvery ?? ''), defaults.kindleWifiRetryEvery),
       pictureInPicture: raw.pictureInPicture === true,
       pictureInPictureScale: normalizePipScale(raw.pictureInPictureScale),
-      setupComplete: raw.setupComplete === true,
+      setupComplete: true,
+      kindleDevices,
+      activeKindleId,
     }
   } catch {
     dashboardConfig = defaults
@@ -168,15 +204,55 @@ export async function saveConfig(raw: unknown): Promise<DashboardConfig> {
   const input = recordInput(raw)
   const previous = await loadConfig()
   const password = typeof input.kindlePassword === 'string' ? input.kindlePassword : ''
+
+  const rawIp = typeof input.kindleIp === 'string' ? input.kindleIp.trim() : ''
+  const kindleIp = rawIp || previous.kindleIp || '192.168.0.40'
+
+  const rawUser = typeof input.kindleUser === 'string' ? input.kindleUser.trim() : ''
+  const kindleUser = rawUser || previous.kindleUser || 'root'
+
+  const kindlePort = numberField(input, 'kindlePort', previous.kindlePort || 22)
+
+  let kindleDevices = Array.isArray(input.kindleDevices) && input.kindleDevices.length > 0
+    ? (input.kindleDevices as KindleDevice[])
+    : (previous.kindleDevices || [
+        {
+          id: 'kindle-1',
+          name: 'Kindle Principal (Mesa)',
+          ip: kindleIp,
+          port: kindlePort,
+          user: kindleUser,
+          notes: 'Kindle Touch 3 (KT3)',
+        },
+      ])
+
+  const activeKindleId = typeof input.activeKindleId === 'string' && input.activeKindleId
+    ? input.activeKindleId
+    : (previous.activeKindleId || kindleDevices[0].id)
+
+  // Sincroniza o dispositivo ativo com o IP, porta e usuário definidos
+  const activeIdx = kindleDevices.findIndex((d) => d.id === activeKindleId)
+  if (activeIdx !== -1) {
+    kindleDevices[activeIdx] = {
+      ...kindleDevices[activeIdx],
+      ip: kindleIp,
+      port: kindlePort,
+      user: kindleUser,
+    }
+  }
+
   const next: StoredDashboardConfig = {
     ...previous,
     dashboardUrl: normalizedDashboardUrl(requiredString(input, 'dashboardUrl', 500)),
     kindleFullRefreshEvery: numberField(input, 'kindleFullRefreshEvery', previous.kindleFullRefreshEvery, 1000),
-    kindleIp: requiredString(input, 'kindleIp', 255),
-    kindlePort: numberField(input, 'kindlePort', previous.kindlePort),
+    kindleIp,
+    kindlePort,
     kindleRefreshInterval: numberField(input, 'kindleRefreshInterval', previous.kindleRefreshInterval, 86400),
-    kindleUser: requiredString(input, 'kindleUser', 64),
+    kindleUser,
     kindleWifiRetryEvery: numberField(input, 'kindleWifiRetryEvery', previous.kindleWifiRetryEvery, 1000),
+    setupComplete: true,
+    kindleDevices,
+    activeKindleId,
   }
 
   if (password) Object.assign(next, encryptedPasswordFields(password))

@@ -21,6 +21,18 @@ export interface RenderResult {
   updatedAt: string
 }
 
+export interface KindleDevice {
+  id: string
+  name: string
+  ip: string
+  port: number
+  user: string
+  notes?: string
+  battery?: number | null
+  isCharging?: boolean
+  lastSeen?: number | null
+}
+
 export interface DashboardConfig {
   dashboardUrl: string
   kindleFullRefreshEvery: number
@@ -34,6 +46,8 @@ export interface DashboardConfig {
   pictureInPicture: boolean
   pictureInPictureScale: number
   setupComplete: boolean
+  kindleDevices?: KindleDevice[]
+  activeKindleId?: string
 }
 
 export interface DashboardConfigInput {
@@ -45,6 +59,8 @@ export interface DashboardConfigInput {
   kindleRefreshInterval: number
   kindleUser: string
   kindleWifiRetryEvery: number
+  kindleDevices?: KindleDevice[]
+  activeKindleId?: string
 }
 
 export interface AuthSourceStatus {
@@ -138,6 +154,12 @@ export interface KindleLiveInfo {
   isCharging: boolean
   lastSeen: number | null
   clientIp: string | null
+  devices?: Record<string, {
+    clientIp: string
+    battery: number | null
+    isCharging: boolean
+    lastSeen: number | null
+  }>
 }
 
 export interface DashboardApi {

@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { ActionButton } from '../components/ActionButton'
 import { ExecPill, ReqChip } from '../components/StatusChips'
 import type { Translator } from '../i18n'
-import { dashboardHostFromUrl, dashboardUrlWithHost } from '../lib/format'
+import { dashboardHostFromUrl, dashboardUrlWithHost, formatTime } from '../lib/format'
 import type { ConfigForm, KindleScriptAction, KindleTab } from '../types'
-import type { DashboardConfig, KindleScriptStatus, KindleStatus } from '../../../shared/types'
+import type { DashboardConfig, KindleDevice, KindleLiveInfo, KindleScriptStatus, KindleStatus } from '../../../shared/types'
 
 interface KindleViewProps {
   checkingKindle: boolean
@@ -14,12 +15,16 @@ interface KindleViewProps {
   installOutput: string | null
   installing: boolean
   kindle: KindleStatus | null
+  kindleLive: KindleLiveInfo | null
   kindleScript: KindleScriptStatus | null
   kindleTab: KindleTab
+  onAddDevice: (device: { name: string; ip: string; port: number; user: string }) => Promise<void>
   onCheckKindle: () => void
   onInstall: () => void
   onKindleTab: (tab: KindleTab) => void
+  onRemoveDevice: (id: string) => Promise<void>
   onScript: (action: KindleScriptAction) => void
+  onSelectDevice: (id: string) => Promise<void>
   onSubmitConfig: () => void
   onUninstall: () => void
   onUpdateForm: (key: keyof ConfigForm, value: string) => void
@@ -38,12 +43,16 @@ export function KindleView({
   installOutput,
   installing,
   kindle,
+  kindleLive,
   kindleScript,
   kindleTab,
+  onAddDevice,
   onCheckKindle,
   onInstall,
   onKindleTab,
+  onRemoveDevice,
   onScript,
+  onSelectDevice,
   onSubmitConfig,
   onUninstall,
   onUpdateForm,
@@ -53,10 +62,56 @@ export function KindleView({
   uninstalling,
 }: KindleViewProps): React.JSX.Element {
   const busy = saving || installing || uninstalling || checkingKindle || scriptAction !== null
+  const [newName, setNewName] = useState('')
+  const [newIp, setNewIp] = useState('')
+  const [newPort, setNewPort] = useState('22')
+  const [newUser, setNewUser] = useState('root')
+  const [addingDevice, setAddingDevice] = useState(false)
+
+  const devices: KindleDevice[] = config?.kindleDevices && config.kindleDevices.length > 0
+    ? config.kindleDevices
+    : [
+        {
+          id: 'default',
+          name: 'Kindle Principal (Mesa)',
+          ip: config?.kindleIp || '192.168.0.40',
+          port: config?.kindlePort || 22,
+          user: config?.kindleUser || 'root',
+        },
+      ]
+
+  async function handleAddSubmit(e: React.FormEvent): Promise<void> {
+    e.preventDefault()
+    if (!newIp.trim()) return
+    setAddingDevice(true)
+    try {
+      await onAddDevice({
+        name: newName.trim() || `Kindle ${newIp.trim()}`,
+        ip: newIp.trim(),
+        port: Number.parseInt(newPort, 10) || 22,
+        user: newUser.trim() || 'root',
+      })
+      setNewName('')
+      setNewIp('')
+      setNewPort('22')
+      setNewUser('root')
+    } finally {
+      setAddingDevice(false)
+    }
+  }
 
   return (
     <section className="single-grid">
       <div className="subtabs" role="tablist">
+        <ActionButton
+          role="tab"
+          aria-selected={kindleTab === 'dispositivos'}
+          className={`subtab ${kindleTab === 'dispositivos' ? 'active' : ''}`}
+          onClick={() => onKindleTab('dispositivos')}
+          icon="battery"
+        >
+          {t('kindleDevicesTab')}
+        </ActionButton>
         <ActionButton
           role="tab"
           aria-selected={kindleTab === 'config'}
@@ -76,6 +131,133 @@ export function KindleView({
           {t('diagnosticsInstall')}
         </ActionButton>
       </div>
+
+      {kindleTab === 'dispositivos' ? (
+        <section className="kindle-devices-view">
+          <div className="panel devices-intro-banner">
+            <div>
+              <p className="eyebrow">{t('kindleDevicesTab')}</p>
+              <h2>{t('kindleDevicesTitle')}</h2>
+              <p className="field-note">{t('kindleDevicesSub')}</p>
+            </div>
+          </div>
+
+          <div className="devices-list-grid">
+            {devices.map((device) => {
+              const isSelected = device.id === config?.activeKindleId || (!config?.activeKindleId && device.ip === (config?.kindleIp || '192.168.0.40'))
+              const live = kindleLive?.devices?.[device.ip] || (device.ip === kindleLive?.clientIp ? kindleLive : null)
+              const hasBat = live?.battery !== null && live?.battery !== undefined
+              const lastSeenText = live?.lastSeen ? formatTime(new Date(live.lastSeen).toISOString(), 'pt-BR', t('loading')) : null
+
+              return (
+                <div key={device.id} className={`panel device-card ${isSelected ? 'active-device' : ''}`}>
+                  <div className="device-card-header">
+                    <div>
+                      <h3 className="device-name">{device.name}</h3>
+                      <span className="device-ip-tag">{device.ip}:{device.port || 22}</span>
+                    </div>
+                    {isSelected ? (
+                      <span className="badge ok">{t('activeBadge')}</span>
+                    ) : (
+                      <ActionButton
+                        className="ghost compact"
+                        onClick={() => void onSelectDevice(device.id)}
+                        disabled={busy}
+                        icon="check"
+                      >
+                        {t('selectDevice')}
+                      </ActionButton>
+                    )}
+                  </div>
+
+                  <div className="device-card-body">
+                    <div className="device-row">
+                      <span className="row-label">{t('fieldUser')}:</span>
+                      <span className="row-val">{device.user || 'root'}</span>
+                    </div>
+                    <div className="device-row">
+                      <span className="row-label">{t('batteryHeader')}:</span>
+                      <span className="row-val">
+                        {hasBat ? `${live.battery}% · ${live.isCharging ? t('charging') : t('notCharging')}` : 'Aguardando sync'}
+                      </span>
+                    </div>
+                    {lastSeenText ? (
+                      <div className="device-row">
+                        <span className="row-label">{t('updatedAt')}:</span>
+                        <span className="row-val muted">{lastSeenText}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {devices.length > 1 ? (
+                    <div className="device-card-footer">
+                      <ActionButton
+                        className="ghost danger compact"
+                        icon="trash"
+                        onClick={() => void onRemoveDevice(device.id)}
+                        disabled={busy}
+                      >
+                        {t('removeDevice')}
+                      </ActionButton>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+
+          <form className="panel add-device-form" onSubmit={(e) => void handleAddSubmit(e)}>
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">{t('kindleDevicesTab')}</p>
+                <h3>+ {t('addKindle')}</h3>
+              </div>
+            </div>
+
+            <div className="field-grid">
+              <label>
+                <span>{t('deviceName')}</span>
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder={t('deviceNamePlaceholder')}
+                />
+              </label>
+              <label>
+                <span>{t('fieldKindleIp')}</span>
+                <input
+                  value={newIp}
+                  onChange={(e) => setNewIp(e.target.value)}
+                  placeholder="192.168.0.x"
+                  required
+                />
+              </label>
+              <label>
+                <span>{t('fieldPort')}</span>
+                <input
+                  value={newPort}
+                  onChange={(e) => setNewPort(e.target.value)}
+                  inputMode="numeric"
+                />
+              </label>
+              <label>
+                <span>{t('fieldUser')}</span>
+                <input
+                  value={newUser}
+                  onChange={(e) => setNewUser(e.target.value)}
+                  placeholder="root"
+                />
+              </label>
+            </div>
+
+            <div className="button-row">
+              <ActionButton type="submit" icon="plus" disabled={busy || addingDevice || !newIp.trim()}>
+                {addingDevice ? t('addingKindle') : t('addKindle')}
+              </ActionButton>
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       {kindleTab === 'config' ? (
         <form
