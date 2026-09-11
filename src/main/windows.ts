@@ -37,7 +37,7 @@ export function createMainWindow(options: { showOnReady: boolean } = { showOnRea
     minWidth: 980,
     minHeight: 720,
     show: false,
-    title: `Kindle Dashboard v${app.getVersion()}`,
+    title: `PaperDeck v${app.getVersion()}`,
     icon: appAssetPath('icon.png'),
     backgroundColor: '#e9e5dc',
     autoHideMenuBar: true,

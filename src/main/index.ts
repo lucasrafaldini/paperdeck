@@ -62,7 +62,7 @@ function runStartupChecks(): void {
   showSettingsWindow()
 }
 
-app.setName('kindle-dashboard')
+app.setName('PaperDeck')
 
 const hasLock = app.requestSingleInstanceLock()
 if (!hasLock) {
@@ -73,7 +73,7 @@ if (!hasLock) {
   })
 
   app.whenReady().then(async () => {
-    app.setAppUserModelId('com.alexi.kindle-dashboard')
+    app.setAppUserModelId('com.lucasrafaldini.paperdeck')
     Menu.setApplicationMenu(null)
 
     loadLocales()

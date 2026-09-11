@@ -1,9 +1,8 @@
-# Kindle Dashboard
+# PaperDeck
 
-Desktop dashboard for tracking AI tool usage and displaying an always-fresh
-image on a jailbroken Kindle Paperwhite.
+Personal e-ink smart workstation & companion dashboard rendered to a Kindle. Created by Lucas Rafaldini.
 
-The app runs on the PC via Electron, collects local data, renders a high
+The app runs on the PC/Mac via Electron, collects local data, renders a high
 contrast PNG, and serves it at `http://<IP_PC>:8787/dash.png`. The Kindle
 downloads that image on the local network and draws it on screen with FBInk.
 
@@ -12,16 +11,14 @@ prepared, with SSH and FBInk working.
 
 ## Key Features
 
-- AI usage dashboard for Claude Code and OpenAI Codex.
-- Atomic PNG render optimized for e-ink screens.
-- Local server with `/dash.png`, `/render`, `/api/ping`, `/api/auth`, and `/api/usage`.
-- Kindle setup through the UI: IP, SSH port, SSH user, password, PNG URL, and intervals.
-- Remote diagnostics for SSH, jailbreak, FBInk, hotfix, and installed scripts.
-- Install, remove, start, and stop Kindle scripts from the UI.
-- Windows tray actions to open the panel, open settings, refresh, and quit.
-- Always-on-top desktop `Picture-in-Picture` window with configurable scale.
-- Multilingual desktop UI and rendered PNG.
-- Current languages: `pt-BR`, `en`, and `es`, with fallback to `en`.
+- **Visual Layout Editor**: Drag-and-drop grid builder to arrange and size cards in real time.
+- **AI Quota Tracking**: Real-time monitoring for Claude Code (with 7-day usage graph), Antigravity AI (5h, weekly quota, session steps), and OpenAI Codex.
+- **Memtchi Virtual Pet**: Interactive pixel art Tamagotchi with hunger/happiness/energy stats and daily humorous motivational quotes.
+- **Mac Hardware Stats**: Live CPU%, RAM (GB), disk usage, uptime, and system info.
+- **Media & Services**: OmniRouter token usage & analytics, Apple Music live now-playing track & progress, and Linux remote server monitor.
+- **Custom Site Scraper**: Automated monitoring and headline scraping for personal blogs, news sites, and RSS feeds.
+- **Battery Optimization & Deep Sleep**: Automated RTC deep sleep (01:00 AM - 10:00 AM) and self-healing Mac IP network auto-discovery.
+- **Multi-Kindle Management**: Device registry to control and inspect multiple Kindles across your home or office.
 
 ## Screenshots
 
@@ -231,4 +228,4 @@ npm run build
 - Change history: [CHANGELOG.md](CHANGELOG.md)
 - Kindle installation: [KINDLE-INSTALLATION.md](KINDLE-INSTALLATION.md)
 - Translations: [locales/README.md](locales/README.md)
-- Releases: [GitHub Releases](https://github.com/alexishida/kindle-dashboard/releases)
+- Releases: [GitHub Releases](https://github.com/lucasrafaldini/kindle-dashboard/releases)

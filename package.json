@@ -1,9 +1,9 @@
 {
-  "name": "kindle-dashboard",
-  "version": "1.0.7",
+  "name": "paperdeck",
+  "version": "2.0.0",
   "private": true,
-  "author": "Alex Ishida",
-  "description": "Always-on AI usage dashboard rendered to a Kindle Paperwhite.",
+  "author": "Lucas Rafaldini",
+  "description": "PaperDeck — Personal e-ink smart workstation & companion dashboard.",
   "main": "dist/main/index.js",
   "engines": {
     "node": ">=24"

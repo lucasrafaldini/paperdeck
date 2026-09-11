@@ -189,7 +189,7 @@
     locale: 'en-US',
     currency: 'USD',
     copy: {
-      title: 'Kindle Dashboard',
+      title: 'PaperDeck',
       resetAt: 'Resets',
       unavailable: 'unavailable',
       tokenExpired: 'expired token - run `claude`',
@@ -683,7 +683,7 @@
 
   function renderWhenReady() {
     if (!i18nLoaded || !usageLoaded) return;
-    var customTitle = (usage && usage.dashboardTitle) || copy('title') || 'Kindle Dashboard';
+    var customTitle = (usage && usage.dashboardTitle) || copy('title') || 'PaperDeck';
     document.getElementById('title').textContent = customTitle;
     render(usage || unavailableDashboard());
   }

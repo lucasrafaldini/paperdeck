@@ -5,7 +5,7 @@ export function positiveInt(value: string | undefined, fallback: number): number
 
 export const PORT = positiveInt(process.env.PORT, 8787)
 export const BASE_URL = `http://127.0.0.1:${PORT}`
-export const REPO_URL = 'https://github.com/alexishida/kindle-dashboard'
+export const REPO_URL = 'https://github.com/lucasrafaldini/kindle-dashboard'
 
 // Resolução nativa do Kindle 8th Gen (KT3: 600x800 framebuffer, tela 800x600 landscape)
 export const CAPTURE_WIDTH = 600

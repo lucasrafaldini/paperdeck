@@ -1,5 +1,5 @@
-appId: com.alexi.kindle-dashboard
-productName: Kindle Dashboard
+appId: com.lucasrafaldini.paperdeck
+productName: PaperDeck
 
 directories:
   buildResources: build
@@ -30,7 +30,7 @@ mac:
 win:
   target: nsis
   icon: build/icon.png
-  artifactName: Kindle-Dashboard-${version}-setup.${ext}
+  artifactName: PaperDeck-${version}-setup.${ext}
 
 nsis:
   oneClick: false

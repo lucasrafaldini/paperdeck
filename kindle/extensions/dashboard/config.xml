@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension>
   <information>
-    <name>Kindle Dashboard</name>
-    <version>1.0</version>
-    <author>Alex Ishida</author>
-    <id>kindle-dashboard</id>
+    <name>PaperDeck</name>
+    <version>2.0</version>
+    <author>Lucas Rafaldini</author>
+    <id>paperdeck</id>
   </information>
   <menus>
     <menu type="json" file="menu.json"/>
