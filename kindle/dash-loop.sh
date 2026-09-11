@@ -66,6 +66,37 @@ reconnect_wifi() {
   sleep 6
 }
 
+discover_pc() {
+  ENV_FILE=/mnt/us/dash-autostart.env
+  # 1. Tenta mDNS
+  for host in "Outiss-Mac-mini.local" "outiss-mac-mini.local"; do
+    if curl -fsS --connect-timeout 2 --max-time 3 "http://${host}:8787/api/ping" >/dev/null 2>&1; then
+      PC="http://${host}:8787/dash.png"
+      [ -f "$ENV_FILE" ] && sed -i '/^PC=/d' "$ENV_FILE" 2>/dev/null
+      echo "PC=$PC" >> "$ENV_FILE"
+      echo "[dash-loop] auto-descoberta via mDNS: $PC"
+      return 0
+    fi
+  done
+  # 2. Varre sub-rede local procurando pela porta 8787
+  MY_IP=$(lipc-get-prop com.lab126.wifid ipAddress 2>/dev/null)
+  [ -z "$MY_IP" ] && return 1
+  PREFIX=$(echo "$MY_IP" | cut -d. -f1-3)
+  for octet in 36 25 2 3 4 5 6 7 8 9 10 14 15 20 22 24 30 31 32 34 35 37 40 41 50; do
+    TEST_IP="${PREFIX}.${octet}"
+    if [ "$TEST_IP" != "$MY_IP" ]; then
+      if curl -fsS --connect-timeout 1 --max-time 2 "http://${TEST_IP}:8787/api/ping" >/dev/null 2>&1; then
+        PC="http://${TEST_IP}:8787/dash.png"
+        [ -f "$ENV_FILE" ] && sed -i '/^PC=/d' "$ENV_FILE" 2>/dev/null
+        echo "PC=$PC" >> "$ENV_FILE"
+        echo "[dash-loop] auto-descoberta: Mac encontrado em $TEST_IP ($PC)"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
 wait_for_wifi() {
   retries=15
   while [ "$retries" -gt 0 ]; do
@@ -213,6 +244,7 @@ while [ ! -f "$STOP" ]; do
     fi
     if [ $((failures % WIFI_RETRY_EVERY)) -eq 0 ]; then
       reconnect_wifi
+      discover_pc
     fi
   fi
 
