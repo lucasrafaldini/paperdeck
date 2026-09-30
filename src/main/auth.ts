@@ -59,6 +59,18 @@ export function openLogin(tool: unknown): void {
     return
   }
 
+  if (process.platform === 'darwin') {
+    const cmd = tool === 'claude' ? 'claude' : 'codex login'
+    const script = `tell application "Terminal" to do script "${cmd}" activate`
+    const child = spawn('osascript', ['-e', script], {
+      cwd: app.getPath('home'),
+      detached: true,
+      stdio: 'ignore',
+    })
+    child.unref()
+    return
+  }
+
   const child = spawn(tool === 'claude' ? 'claude' : 'codex login', {
     cwd: app.getPath('home'),
     detached: true,

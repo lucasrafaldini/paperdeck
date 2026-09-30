@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$TaskName = 'Kindle Dashboard'
+$TaskName = 'PaperDeck'
 $Root = Split-Path -Parent $PSScriptRoot
 
 function Get-ElectronPath {
@@ -120,7 +120,7 @@ switch ($Action) {
       -Trigger $trigger `
       -Principal $principal `
       -Settings $settings `
-      -Description 'Starts the Kindle Dashboard Electron app and PNG renderer.'
+      -Description 'Starts the PaperDeck Electron app and PNG renderer.'
 
     Register-ScheduledTask -TaskName $TaskName -InputObject $task -Force | Out-Null
     Start-ScheduledTask -TaskName $TaskName
@@ -131,7 +131,7 @@ switch ($Action) {
     Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     Stop-ProjectProcesses
     Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
-    Write-Host 'Kindle Dashboard autostart removed.'
+    Write-Host 'PaperDeck autostart removed.'
   }
   'Start' {
     Start-ScheduledTask -TaskName $TaskName
@@ -141,7 +141,7 @@ switch ($Action) {
   'Stop' {
     Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     Stop-ProjectProcesses
-    Write-Host 'Kindle Dashboard stopped.'
+    Write-Host 'PaperDeck stopped.'
   }
   'Status' {
     Show-Status

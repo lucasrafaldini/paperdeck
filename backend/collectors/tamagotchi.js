@@ -1,4 +1,4 @@
-// Coletor do Mascote Virtual (Tamagotchi) para o Kindle Dashboard
+// Coletor do Mascote Virtual (Tamagotchi) para o PaperDeck
 const fs = require('fs');
 const path = require('path');
 const { getDataDir } = require('../config');
@@ -17,6 +17,8 @@ const DEFAULT_PET = {
   lastPetted: Date.now() - 1800 * 1000,
   lastPlayed: Date.now() - 7200 * 1000,
   lastBathed: Date.now() - 3600 * 1000,
+  lastRested: Date.now() - 3600 * 1000,
+  isSleeping: false,
   hunger: 25,       // 0 = cheio, 100 = morrendo de fome
   happiness: 90,    // 0 = triste, 100 = extasiado
   energy: 85,       // 0 = exausto, 100 = cheio de energia
@@ -25,6 +27,7 @@ const DEFAULT_PET = {
   petCount: 25,
   playCount: 10,
   bathCount: 5,
+  sleepCount: 3,
 };
 
 const MOTIVATIONAL_QUOTES = [
@@ -92,6 +95,7 @@ function computeDecay(pet) {
   const hoursSinceFed = Math.max(0, (now - (pet.lastFed || now)) / (3600 * 1000));
   const hoursSincePet = Math.max(0, (now - (pet.lastPetted || now)) / (3600 * 1000));
   const hoursSinceBathed = Math.max(0, (now - (pet.lastBathed || pet.bornAt || now)) / (3600 * 1000));
+  const hoursSinceRested = Math.max(0, (now - (pet.lastRested || pet.bornAt || now)) / (3600 * 1000));
 
   // Fome: +4% por hora
   let currentHunger = Math.min(100, Math.round((pet.hunger ?? 25) + hoursSinceFed * 4));
@@ -100,24 +104,35 @@ function computeDecay(pet) {
   let currentCleanliness = Math.max(0, Math.round((pet.cleanliness ?? 95) - hoursSinceBathed * 2));
 
   // Felicidade: cai 3% por hora sem carinho/brincadeira; penalidades se com fome ou sujo
-  let penalty = (currentHunger > 70 ? 2 : 0) + (currentCleanliness < 30 ? 2 : 0);
+  let penalty = (currentHunger > 70 ? 2 : 0) + (currentCleanliness < 30 ? 2 : 0) + ((pet.energy ?? 80) < 25 ? 2 : 0);
   let currentHappiness = Math.max(0, Math.round((pet.happiness ?? 90) - hoursSincePet * 3 - penalty));
 
-  // Energia: recupera à noite (23h-07h), gasta um pouco de dia
-  const localHour = new Date().getHours();
+  // Energia: descanso recupera, acordado consome devagar
+  const localHour = new Date(now).getHours();
   const isNight = localHour >= 23 || localHour < 7;
-  let currentEnergy = isNight
-    ? Math.min(100, (pet.energy ?? 80) + 10)
-    : Math.max(10, (pet.energy ?? 80) - 5);
+  const isSleeping = Boolean(pet.isSleeping || isNight);
+
+  let currentEnergy = pet.energy ?? 80;
+  if (isSleeping) {
+    // Sono/descanso recupera 25% por hora de sono
+    currentEnergy = Math.min(100, Math.round(currentEnergy + Math.max(0.5, hoursSinceRested) * 25));
+  } else {
+    // Acordado: gasta 2% por hora
+    currentEnergy = Math.max(10, Math.round(currentEnergy - hoursSinceRested * 2));
+  }
 
   let mood = 'normal';
   let statusText = 'Tranquilo e passeando 🐾';
   let spriteAscii = '(=^･ω･^=)';
 
-  if (isNight) {
+  if (isSleeping) {
     mood = 'sleeping';
-    statusText = 'Dormindo profundamente... 💤';
+    statusText = pet.isSleeping ? 'Tirando uma soneca revigorante... 💤' : 'Dormindo profundamente... 💤';
     spriteAscii = '(-.-) z Z';
+  } else if (currentEnergy <= 25) {
+    mood = 'tired';
+    statusText = 'Exausto e sonolento... Precisa de descanso! 💤';
+    spriteAscii = '(-.-)';
   } else if (currentHunger >= 75) {
     mood = 'hungry';
     statusText = 'Com muita fome! Precisa de comida 🍲';
@@ -143,7 +158,7 @@ function computeDecay(pet) {
 
   // Seleciona frame estático ideal para e-ink / snapshot
   let frameKey = 'idle_1';
-  if (mood === 'sleeping') frameKey = 'sleep';
+  if (mood === 'sleeping' || mood === 'tired') frameKey = 'sleep';
   else if (mood === 'hungry') frameKey = 'feed';
   else if (mood === 'dirty') frameKey = 'bath';
   else if (mood === 'happy') frameKey = 'pet';
@@ -160,6 +175,7 @@ function computeDecay(pet) {
     happiness: currentHappiness,
     energy: currentEnergy,
     cleanliness: currentCleanliness,
+    isSleeping,
     ageDays,
     level,
     mood,
@@ -182,23 +198,43 @@ function performAction(action, payload = {}) {
     updated.cleanliness = Math.max(0, (current.cleanliness ?? 90) - 5);
     updated.lastFed = now;
     updated.feedCount = (current.feedCount || 0) + 1;
+    if (updated.isSleeping) updated.isSleeping = false;
   } else if (action === 'pet') {
     updated.happiness = Math.min(100, (current.happiness ?? 80) + 25);
     updated.lastPetted = now;
     updated.petCount = (current.petCount || 0) + 1;
+    if (updated.isSleeping) updated.isSleeping = false;
   } else if (action === 'play') {
     updated.happiness = Math.min(100, (current.happiness ?? 80) + 30);
     updated.hunger = Math.min(100, (current.hunger ?? 30) + 10);
-    updated.energy = Math.max(10, (current.energy ?? 80) - 15);
+    updated.energy = Math.max(10, (current.energy ?? 80) - 20);
     updated.cleanliness = Math.max(0, (current.cleanliness ?? 90) - 10);
     updated.lastPlayed = now;
     updated.lastPetted = now;
     updated.playCount = (current.playCount || 0) + 1;
+    if (updated.isSleeping) updated.isSleeping = false;
   } else if (action === 'bath') {
     updated.cleanliness = 100;
     updated.happiness = Math.min(100, (current.happiness ?? 80) + 20);
     updated.lastBathed = now;
     updated.bathCount = (current.bathCount || 0) + 1;
+    if (updated.isSleeping) updated.isSleeping = false;
+  } else if (action === 'sleep' || action === 'rest' || action === 'nap') {
+    if (current.isSleeping) {
+      updated.isSleeping = false;
+      updated.energy = Math.min(100, (current.energy ?? 50) + 20);
+      updated.lastRested = now;
+    } else {
+      updated.isSleeping = true;
+      updated.energy = Math.min(100, (current.energy ?? 30) + 45);
+      updated.happiness = Math.min(100, (current.happiness ?? 80) + 10);
+      updated.lastRested = now;
+      updated.sleepCount = (current.sleepCount || 0) + 1;
+    }
+  } else if (action === 'wake') {
+    updated.isSleeping = false;
+    updated.energy = Math.min(100, (current.energy ?? 50) + 15);
+    updated.lastRested = now;
   } else if (action === 'setCharacter' && payload.character) {
     updated.character = payload.character;
     updated.type = payload.character;
@@ -247,6 +283,7 @@ async function collect() {
     happiness: state.happiness,
     energy: state.energy,
     cleanliness: state.cleanliness,
+    isSleeping: Boolean(state.isSleeping),
     mood: state.mood,
     statusText: state.statusText,
     spriteAscii: state.spriteAscii,
@@ -256,6 +293,7 @@ async function collect() {
     petCount: state.petCount,
     playCount: state.playCount,
     bathCount: state.bathCount,
+    sleepCount: state.sleepCount || 0,
     animSpeed: state.animSpeed || 'normal',
     theme: state.theme || 'lcd',
     dailyQuote: state.dailyQuote,

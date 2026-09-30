@@ -73,8 +73,8 @@ export function KindleView({
     : [
         {
           id: 'default',
-          name: 'Kindle Principal (Mesa)',
-          ip: config?.kindleIp || '192.168.0.40',
+          name: 'Kindle',
+          ip: config?.kindleIp || '',
           port: config?.kindlePort || 22,
           user: config?.kindleUser || 'root',
         },
@@ -144,7 +144,7 @@ export function KindleView({
 
           <div className="devices-list-grid">
             {devices.map((device) => {
-              const isSelected = device.id === config?.activeKindleId || (!config?.activeKindleId && device.ip === (config?.kindleIp || '192.168.0.40'))
+              const isSelected = device.id === config?.activeKindleId || (!config?.activeKindleId && device.ip === (config?.kindleIp || ''))
               const live = kindleLive?.devices?.[device.ip] || (device.ip === kindleLive?.clientIp ? kindleLive : null)
               const hasBat = live?.battery !== null && live?.battery !== undefined
               const lastSeenText = live?.lastSeen ? formatTime(new Date(live.lastSeen).toISOString(), 'pt-BR', t('loading')) : null

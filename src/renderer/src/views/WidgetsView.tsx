@@ -47,6 +47,10 @@ const WIDGET_DESCRIPTIONS: Record<string, { desc: string; icon: string }> = {
     desc: 'OpenAI Codex CLI, tokens utilizados e limites de uso.',
     icon: '⚡',
   },
+  opencode: {
+    desc: 'Estatísticas do OpenCode local (sessões, mensagens, tokens, cache e modelos Ollama).',
+    icon: '💻',
+  },
 }
 
 const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default: boolean }[]> = {
@@ -98,6 +102,12 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
   codex: [
     { id: 'limits', label: 'Limites e créditos disponíveis', default: true },
     { id: 'spend', label: 'Total gasto em USD e sessões ativas', default: true },
+  ],
+  opencode: [
+    { id: 'modelInfo', label: 'Modelo configurado e status do processo', default: true },
+    { id: 'statGrid', label: 'Grid com sessões, mensagens e tokens', default: true },
+    { id: 'activeSession', label: 'Título da sessão mais recente', default: true },
+    { id: 'historyChart', label: 'Gráfico histórico de mensagens (7 dias)', default: true },
   ],
 }
 

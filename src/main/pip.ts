@@ -75,7 +75,7 @@ function openPipWindow(): void {
     skipTaskbar: true,
     alwaysOnTop: true,
     backgroundColor: '#ffffff',
-    title: 'Kindle Dashboard',
+    title: 'PaperDeck',
     webPreferences: {
       preload: join(__dirname, '../preload/pip.js'),
       sandbox: true,

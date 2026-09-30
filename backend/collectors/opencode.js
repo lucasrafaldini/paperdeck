@@ -1,34 +1,206 @@
-// Coletor OpenCode — lê o SQLite local (validado na Fase 0.3). Sem rede.
-// A tabela `session` já traz `cost` (USD) calculado pelo próprio OpenCode.
-// Saldo do plano Go: confirmado que NÃO há API (fica null).
-const { DatabaseSync } = require('node:sqlite');
+// Coletor do OpenCode local — extrai métricas de sessões, mensagens, tokens e modelos do SQLite local.
+const { execSync } = require('child_process');
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const DB = path.join(os.homedir(), '.local', 'share', 'opencode', 'opencode.db');
+const OPENCODE_DIR = path.join(os.homedir(), '.local', 'share', 'opencode');
+const OPENCODE_DB = path.join(OPENCODE_DIR, 'opencode.db');
+const OPENCODE_CONFIG = path.join(os.homedir(), '.config', 'opencode', 'opencode.json');
+const CACHE_TTL_MS = 15000; // 15s cache
 
-async function collect() {
-  let db;
+let cache = { at: 0, data: null };
+
+function checkProcessRunning() {
   try {
-    db = new DatabaseSync(DB, { readOnly: true });
-    const agg = db.prepare(
-      'SELECT COUNT(*) sessions, SUM(cost) usd, ' +
-      'SUM(tokens_input) tin, SUM(tokens_output) tout FROM session'
-    ).get();
-    const tool = {
+    const ps = execSync('ps aux | grep "[o]pencode"', { encoding: 'utf8', timeout: 800 });
+    const lines = ps.trim().split('\n').filter(Boolean);
+    if (lines.length > 0) {
+      const matchModel = lines[0].match(/--model\s+([^\s]+)/);
+      return { running: true, model: matchModel ? matchModel[1] : null };
+    }
+  } catch {}
+  return { running: false, model: null };
+}
+
+function readLocalConfig() {
+  try {
+    if (fs.existsSync(OPENCODE_CONFIG)) {
+      return JSON.parse(fs.readFileSync(OPENCODE_CONFIG, 'utf8'));
+    }
+  } catch {}
+  return null;
+}
+
+function querySql(dbPath, sql) {
+  const sanitized = sql.replace(/"/g, '\\"');
+  return execSync(`sqlite3 "${dbPath}" "${sanitized}"`, { encoding: 'utf8', timeout: 1500 }).trim();
+}
+
+async function collect(customDbPath) {
+  const now = Date.now();
+  if (!customDbPath && cache.data && (now - cache.at < CACHE_TTL_MS)) {
+    return cache.data;
+  }
+
+  const dbPath = customDbPath || OPENCODE_DB;
+
+  if (!fs.existsSync(dbPath)) {
+    return {
       tool: 'opencode',
-      label: 'OpenCode Go',
-      spend: { usd: agg.usd || 0, sessions: agg.sessions || 0 },
-      tokens: { total: (agg.tin || 0) + (agg.tout || 0) },
-      balance: null, // sem API de saldo
-      confidence: 'live',
+      label: 'OpenCode',
+      confidence: 'idle',
+      status: 'Inativo',
+      model: 'Não instalado',
+      totalSessions: 0,
+      totalMessages: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      totalCost: 0,
+      activeSession: null,
+      historyPoints: [0, 0, 0, 0, 0, 0, 0],
+      topModels: [],
+      error: 'Base do OpenCode não encontrada (~/.local/share/opencode/opencode.db)',
     };
-    return tool;
-  } catch (e) {
-    return { tool: 'opencode', label: 'OpenCode Go', spend: null, balance: null, confidence: 'error', error: String(e.message || e) };
-  } finally {
-    if (db) try { db.close(); } catch {}
+  }
+
+  try {
+    const procInfo = checkProcessRunning();
+    const configData = readLocalConfig();
+
+    let defaultModel = configData?.model || 'Ollama Local';
+    if (procInfo.running && procInfo.model) {
+      defaultModel = procInfo.model;
+    }
+
+    // 1. Contagens gerais
+    let sessCount = 0;
+    try {
+      sessCount = parseInt(querySql(dbPath, 'SELECT count(*) FROM session;'), 10) || 0;
+    } catch {}
+
+    let msgCount = 0;
+    try {
+      msgCount = parseInt(querySql(dbPath, 'SELECT count(*) FROM message;'), 10) || 0;
+    } catch {}
+
+    // 2. Tokens & custo
+    let inp = 0;
+    let out = 0;
+    let cacheTokens = 0;
+    let cost = 0;
+
+    try {
+      const tokensRaw = querySql(dbPath, `
+        SELECT 
+          coalesce(sum(json_extract(data, '$.tokens.input')), 0),
+          coalesce(sum(json_extract(data, '$.tokens.output')), 0),
+          coalesce(sum(json_extract(data, '$.tokens.cache.read')), 0),
+          coalesce(sum(json_extract(data, '$.cost')), 0)
+        FROM message;
+      `);
+      if (tokensRaw) {
+        const parts = tokensRaw.split('|').map((v) => Number(v) || 0);
+        inp = parts[0] || 0;
+        out = parts[1] || 0;
+        cacheTokens = parts[2] || 0;
+        cost = parts[3] || 0;
+      }
+    } catch {}
+
+    // 3. Última sessão
+    let latestSessTitle = null;
+    try {
+      latestSessTitle = querySql(dbPath, 'SELECT title FROM session ORDER BY time_updated DESC LIMIT 1;') || null;
+    } catch {}
+
+    // 4. Histórico 7 dias (mensagens criadas por dia)
+    const historyPoints = [0, 0, 0, 0, 0, 0, 0];
+    const todayStart = new Date(now).setHours(0, 0, 0, 0);
+    const dayMs = 24 * 3600 * 1000;
+
+    for (let idx = 0; idx < 7; idx++) {
+      const dayStart = todayStart - (6 - idx) * dayMs;
+      const dayEnd = dayStart + dayMs;
+      try {
+        const dayRes = querySql(dbPath, `SELECT count(*) FROM message WHERE time_created >= ${dayStart} AND time_created < ${dayEnd};`);
+        historyPoints[idx] = parseInt(dayRes || '0', 10) || 0;
+      } catch {}
+    }
+
+    // 5. Modelos mais usados
+    const topModels = [];
+    try {
+      const modelsRaw = querySql(dbPath, `
+        SELECT json_extract(data, '$.modelID') as m, count(*) as cnt 
+        FROM message 
+        WHERE json_extract(data, '$.modelID') IS NOT NULL 
+        GROUP BY m 
+        ORDER BY cnt DESC 
+        LIMIT 3;
+      `);
+      if (modelsRaw) {
+        for (const line of modelsRaw.split('\n').filter(Boolean)) {
+          const [mName, cnt] = line.split('|');
+          if (mName) {
+            topModels.push({ name: mName, count: parseInt(cnt || '0', 10) });
+          }
+        }
+      }
+    } catch {}
+
+    const totalTokens = inp + out + cacheTokens;
+    const status = procInfo.running ? 'Ativo' : 'Ocioso';
+
+    const result = {
+      tool: 'opencode',
+      label: 'OpenCode',
+      confidence: 'live',
+      status,
+      model: defaultModel,
+      totalSessions: sessCount,
+      totalMessages: msgCount,
+      totalTokens,
+      inputTokens: inp,
+      outputTokens: out,
+      cacheReadTokens: cacheTokens,
+      totalCost: cost,
+      activeSession: latestSessTitle,
+      historyPoints,
+      topModels,
+    };
+
+    if (!customDbPath) {
+      cache = { at: now, data: result };
+    }
+    return result;
+  } catch (error) {
+    return {
+      tool: 'opencode',
+      label: 'OpenCode',
+      confidence: 'error',
+      status: 'Erro',
+      model: 'Desconhecido',
+      totalSessions: 0,
+      totalMessages: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      totalCost: 0,
+      activeSession: null,
+      historyPoints: [0, 0, 0, 0, 0, 0, 0],
+      topModels: [],
+      error: String(error.message || error),
+    };
   }
 }
 
-module.exports = { collect };
+module.exports = {
+  collect,
+  querySql,
+  OPENCODE_DB,
+  OPENCODE_CONFIG,
+};

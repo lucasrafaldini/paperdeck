@@ -61,7 +61,7 @@ export function SettingsView({
             <input
               type="text"
               value={titleInput}
-              placeholder="Kindle Dashboard"
+              placeholder="PaperDeck"
               onChange={(e) => setTitleInput(e.target.value)}
               disabled={disabled || savingTitle}
               style={{ flex: 1 }}
@@ -78,7 +78,7 @@ export function SettingsView({
         </label>
 
         <p className="field-note standalone-note">
-          Título atual: <strong>{dashboardTitle || 'Kindle Dashboard'}</strong>. Se não preenchido, o padrão exibido é <strong>Kindle Dashboard</strong>.
+          Título atual: <strong>{dashboardTitle || 'PaperDeck'}</strong>. Se não preenchido, o padrão exibido é <strong>PaperDeck</strong>.
         </p>
       </section>
 

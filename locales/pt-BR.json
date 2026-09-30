@@ -227,7 +227,7 @@
     "reportAction": "AÇÃO"
   },
   "dashboard": {
-    "title": "Kindle Dashboard",
+    "title": "PaperDeck",
     "resetAt": "Reinicia",
     "unavailable": "indisponível",
     "tokenExpired": "token expirado - rode `claude`",

@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## [v2.0.0](https://github.com/lucasrafaldini/paperdeck/releases/tag/v2.0.0) - 2026-09-30
+
+PaperDeck v2.0.0 — The e-ink smart workstation & companion dashboard.
+
+### Highlights
+- Rebranded to **PaperDeck** with standalone architecture, modular widget framework, and unified visual layout editor.
+- Added live widget support for Claude Code (with 7d trend graphs), Antigravity AI, OpenCode local agent telemetry, Memtchi Virtual Pet (Tamagotchi), OmniRouter tokens, Mac Hardware, Apple Music, and Site Scraper.
+- Added multi-device Kindle fleet manager and dynamic host auto-discovery.
+- Hacktoberfest open-source readiness with contribution templates, test suites, and clean decoupled configuration.
+
 ## [v1.0.7](https://github.com/alexishida/kindle-dashboard/releases/latest) - 2026-07-15
 
 Kindle Dashboard v1.0.7

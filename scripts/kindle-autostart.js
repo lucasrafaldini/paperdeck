@@ -101,7 +101,7 @@ async function install(client, env = process.env) {
 
   const command = `
 if [ -f ${shellQuote(REMOTE.jobTarget)} ] &&
-   ! grep -q 'Kindle Dashboard project' ${shellQuote(REMOTE.jobTarget)}; then
+   ! grep -qE 'PaperDeck|Kindle Dashboard' ${shellQuote(REMOTE.jobTarget)}; then
   echo 'refusing to replace an unknown Upstart job' >&2
   exit 20
 fi
@@ -156,7 +156,7 @@ async function uninstall(client) {
   await stop(client);
   await run(client, `
 if [ -f ${shellQuote(REMOTE.jobTarget)} ] &&
-   grep -q 'Kindle Dashboard project' ${shellQuote(REMOTE.jobTarget)}; then
+   grep -qE 'PaperDeck|Kindle Dashboard' ${shellQuote(REMOTE.jobTarget)}; then
   mntroot rw || exit 1
   rm -f ${shellQuote(REMOTE.jobTarget)}
   RESULT=$?

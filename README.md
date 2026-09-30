@@ -1,231 +1,181 @@
-# PaperDeck
+<p align="center">
+  <a href="README.md"><b>English</b></a> •
+  <a href="README.pt.md"><b>Português</b></a> •
+  <a href="README.es.md"><b>Español</b></a>
+</p>
 
-Personal e-ink smart workstation & companion dashboard rendered to a Kindle. Created by Lucas Rafaldini.
+# PaperDeck 📟
 
-The app runs on the PC/Mac via Electron, collects local data, renders a high
-contrast PNG, and serves it at `http://<IP_PC>:8787/dash.png`. The Kindle
-downloads that image on the local network and draws it on screen with FBInk.
+<p align="center">
+  <a href="https://hacktoberfest.com/"><img src="https://img.shields.io/badge/Hacktoberfest-2026-ff7a00?style=for-the-badge&logo=hacktoberfest&logoColor=white" alt="Hacktoberfest 2026" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D24-brightgreen?style=for-the-badge&logo=node.js" alt="Node.js 24+" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" /></a>
+  <a href="https://www.electronjs.org/"><img src="https://img.shields.io/badge/Electron-42+-47848F?style=for-the-badge&logo=electron" alt="Electron 42" /></a>
+  <img src="https://img.shields.io/badge/Platforms-macOS%20|%20Windows%20|%20Linux-lightgrey?style=for-the-badge" alt="Platforms" />
+</p>
 
-This project does not jailbreak the Kindle. It assumes the device is already
-prepared, with SSH and FBInk working.
+> **Turn your jailbroken Kindle into a dedicated, ambient e-ink smart workstation & companion dashboard.** Created by **Lucas Rafaldini**.
 
-## Key Features
+PaperDeck runs an ambient background server on your host computer (macOS, Windows, or Linux) that gathers local metrics from your active developer agents (Claude Code, Antigravity, OpenCode, Codex), machine health, media playback, and custom websites. It captures an 800x600 high-contrast monochrome canvas and serves it over HTTP to your Kindle, which draws it using FBInk.
 
-- **Visual Layout Editor**: Drag-and-drop grid builder to arrange and size cards in real time.
-- **AI Quota Tracking**: Real-time monitoring for Claude Code (with 7-day usage graph), Antigravity AI (5h, weekly quota, session steps), and OpenAI Codex.
-- **Memtchi Virtual Pet**: Interactive pixel art Tamagotchi with hunger/happiness/energy stats and daily humorous motivational quotes.
-- **Mac Hardware Stats**: Live CPU%, RAM (GB), disk usage, uptime, and system info.
-- **Media & Services**: OmniRouter token usage & analytics, Apple Music live now-playing track & progress, and Linux remote server monitor.
-- **Custom Site Scraper**: Automated monitoring and headline scraping for personal blogs, news sites, and RSS feeds.
-- **Battery Optimization & Deep Sleep**: Automated RTC deep sleep (01:00 AM - 10:00 AM) and self-healing Mac IP network auto-discovery.
-- **Multi-Kindle Management**: Device registry to control and inspect multiple Kindles across your home or office.
+---
 
-## Screenshots
+## 📸 Screenshots
 
-| Panel | Kindle Configuration |
-| --- | --- |
-| ![Panel](screenshot/painel.jpg) | ![Kindle Configuration](screenshot/kindle-config.jpg) |
+| Desktop Control Panel | Kindle Configuration |
+| :---: | :---: |
+| ![Control Panel](screenshot/painel.jpg) | ![Kindle Configuration](screenshot/kindle-config.jpg) |
 
-| Diagnostics and Installation | Logins |
-| --- | --- |
+| Diagnostics & Script Installer | Logins & Authentication |
+| :---: | :---: |
 | ![Diagnostics and Installation](screenshot/kindle-install.jpg) | ![Logins](screenshot/logins.jpg) |
 
-![Picture-in-Picture](screenshot/pip.jpg)
+| Desktop Picture-in-Picture (PiP) | Live on Physical Kindle |
+| :---: | :---: |
+| ![Picture-in-Picture](screenshot/pip.jpg) | ![Kindle example](screenshot/exemplo.jpg) |
 
-![Kindle example](screenshot/exemplo.jpg)
+---
 
-## How It Works
+## ✨ Features
 
-1. The PC opens the Electron app and starts the local backend.
-2. The backend collects local AI tool data.
-3. The main process renders the `/render` page as a PNG.
-4. The app publishes the image at `/dash.png`.
-5. The Kindle downloads the PNG over HTTP on the configured interval.
-6. The Kindle script uses FBInk to update the screen.
+- 📐 **Visual Drag-and-Drop Layout Editor**: Real-time grid builder to arrange, resize, and customize cards.
+- 🤖 **AI & Agent Quotas**:
+  - **Claude Code**: Live 5-hour limit, 7-day token quota, reset timers, and 7-day trend graph.
+  - **Antigravity AI**: 5-hour bar, weekly quota, session step counters, and active model badge.
+  - **OpenCode**: Agent run status, active model, session counters, and token analytics.
+  - **OpenAI Codex**: Live token limits and rollout history (supports native WSL scanning).
+- 👾 **Memtchi Virtual Pet (Tamagotchi)**:
+  - Interactive pixel-art desk companion living on your e-ink screen.
+  - Hunger, happiness, and energy management.
+  - Actions: Feed, Play, Clean, Sleep, and humorous developer reactions.
+- 🖥️ **System Health & Hardware**:
+  - Live CPU load %, RAM usage (GB / %), disk capacity, uptime, and system model.
+- 🎵 **Media & Connected Services**:
+  - **Apple Music**: Track title, artist, album, and live playback progress timeline.
+  - **OmniRouter**: AI gateway tokens and upstream latency metrics.
+  - **Chaos Machine**: Remote Linux server status and health checks.
+  - **Site Scraper / RSS**: Headlines monitor for blogs, news, and releases.
+- 🔋 **Battery Optimization & RTC Deep Sleep**:
+  - Automated night sleep (01:00 AM – 10:00 AM) and Wi-Fi duty cycling (lasts 2 to 3 weeks on one charge).
+  - Dynamic host auto-discovery via mDNS (`paperdeck.local`) and subnet scanning.
+- 📱 **Multi-Kindle Fleet Manager**: Register and control multiple Kindle devices around your home or office.
 
-In the Electron app, the PC render interval follows the Kindle download
-interval. This keeps the PC from rendering faster than the Kindle downloads.
+---
 
-## Requirements
+## ⚙️ How It Works
 
-### PC
-
-- Windows 10 or Windows 11.
-- Node.js `>=24` for development.
-- Claude Code and/or OpenAI Codex installed if you want usage from those tools.
-
-### Kindle
-
-- Kindle Paperwhite with jailbreak already completed.
-- SSH enabled and reachable on the local network.
-- FBInk installed.
-- Kindle and PC on the same Wi-Fi network.
-
-## User Installation
-
-Download the `.exe` installer from a release, or build it locally:
-
-```powershell
-npm run build:win
+```
+┌─────────────────────────────────┐           ┌─────────────────────────────────┐
+│        Host Machine (PC/Mac)    │           │         Kindle Device           │
+│                                 │           │                                 │
+│  [Collectors]                   │           │  [dash-loop.sh daemon]          │
+│   ├─ Claude Code / OpenCode     │           │   1. Reconnects Wi-Fi           │
+│   ├─ Antigravity / Codex        │  Wi-Fi    │   2. Downloads /dash.png (curl) │
+│   ├─ Memtchi Virtual Pet        ├──────────►│   3. Draws image with FBInk     │
+│   └─ Hardware & System Stats    │ HTTP:8787 │   4. Powers down Wi-Fi          │
+│                │                │           │   5. Enters RTC sleep timer     │
+│                ▼                │           │                                 │
+│       [Electron Renderer]       │           │                                 │
+│     (800x600 E-ink Canvas)      │           │                                 │
+└─────────────────────────────────┘           └─────────────────────────────────┘
 ```
 
-Then run the installer on Windows and open **Kindle Dashboard** from the Start
-Menu.
+---
 
-If setup is already complete, the app can start directly in the background and
-stay available in the Windows tray.
+## 🎃 Hacktoberfest & How to Contribute
 
-## First Run
+PaperDeck is participating in **Hacktoberfest**! We welcome contributors of all skill levels to help build new widgets, add translations, enhance the pixel-art pet, and test new Kindle hardware.
 
-Open **Kindle > Configuration** and fill in:
+### 💡 Good First Issues Available
+Check [`.github/hacktoberfest-issues/`](.github/hacktoberfest-issues/) for ready-to-claim tickets:
+1. **Weather Widget**: Live forecast and weather icons via Open-Meteo.
+2. **Spotify Now Playing**: Live playback tracking with progress bar.
+3. **Home Assistant Sensors**: Smart home temperatures, lights, and switches.
+4. **GitHub Tracker**: Pending PR review requests and notification counters.
+5. **Pomodoro Timer**: Desk focus countdown with Kindle alert banners.
+6. **New Translations**: French, German, Italian, Japanese locales.
+7. **Paperwhite 5 (PW5) Support**: High-resolution 1648x1236 profile.
+8. **Tamagotchi Evolution**: Evolution stages and new animations.
 
-| Field | Expected value |
-| --- | --- |
-| Kindle IP | `<KINDLE_IP>` |
-| SSH Port | Usually `22` |
-| SSH User | `<SSH_USER>` |
-| SSH Password | `<SSH_PASSWORD>` |
-| PC IP | `<PC_IP>` |
-| Kindle Download | Interval, in seconds, between PNG downloads |
-| Full Refresh | How many cycles between full Kindle refreshes |
-| Wi-Fi Retry | How many consecutive failures before Wi-Fi recovery |
+### 🚀 Contribution Workflow
+1. Fork the repository: [https://github.com/lucasrafaldini/paperdeck](https://github.com/lucasrafaldini/paperdeck)
+2. Create your branch: `git checkout -b feature/my-new-widget`
+3. Make changes and verify:
+   ```bash
+   npm test              # Run unit tests
+   npm run typecheck     # Validate TypeScript
+   npm run build         # Build production bundle
+   ```
+4. Submit a Pull Request following our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
-Then:
+---
 
-1. Click **Save**.
-2. Open **Kindle > Diagnostics and Installation**.
-3. Click **Check Kindle**.
-4. Confirm that SSH, jailbreak, FBInk, and other checks are OK.
-5. Click **Install scripts**.
-6. Open **Logins** and resolve Claude Code or Codex login issues if they appear.
+## 🚀 Quick Start
 
-Once scripts are installed, the Kindle downloads and displays the PNG on its
-own, including after reboot.
+### 1. Requirements
+- **Computer**: macOS, Windows 10/11, or Linux with **Node.js >= 24.0.0**.
+- **Kindle**: Any jailbroken Kindle (Paperwhite 2/3/4/5, Touch, Oasis, Voyage) with SSH and FBInk installed.
 
-## Daily Use
+### 2. Run from Source
+```bash
+# Clone repository
+git clone https://github.com/lucasrafaldini/paperdeck.git
+cd kindle-dashboard
 
-- **Panel** shows the current PNG preview and can force a new render.
-- **Kindle > Diagnostics** starts or stops the Kindle loop without removing autostart.
-- **Logins** shows local authentication state.
-- **Settings** changes language and toggles `Picture-in-Picture`.
-- `Picture-in-Picture` shows the dashboard in a small always-on-top window.
-- The Windows tray can reopen the panel, open settings, refresh, and quit.
-
-To remove Kindle automation, use **Uninstall** in
-**Kindle > Diagnostics and Installation**. Manual guide:
-[KINDLE-INSTALLATION.md](KINDLE-INSTALLATION.md).
-
-## Multilingual Support
-
-Translatable text lives in `locales/<language>.json`.
-
-The app discovers languages automatically from files in `locales/`. Adding a
-new language does not require TypeScript changes: create a BCP-47 JSON file,
-translate values, and keep the keys. Missing keys fall back to `locales/en.json`.
-
-Details: [locales/README.md](locales/README.md).
-
-## Privacy
-
-Docs and examples must use placeholders:
-
-- `<IP_DO_PC>`
-- `<IP_DO_KINDLE>`
-- `<USUARIO_SSH>`
-- `<SENHA_SSH>`
-
-Do not commit:
-
-- Kindle serial number;
-- real PC or Kindle IP;
-- real username;
-- SSH password;
-- tokens, cookies, local databases, or session files;
-- logs, builds, installers, or runtime PNGs.
-
-The SSH password saved by the app lives in Electron `userData` and uses
-`safeStorage` when available. The renderer receives only public state, such as
-`kindlePasswordSaved`.
-
-## Development
-
-Install dependencies:
-
-```powershell
+# Install dependencies
 npm install
-```
 
-Run the app in development:
-
-```powershell
+# Launch desktop app in development
 npm run dev
 ```
 
-Main commands:
+### 3. Connect Your Kindle
+1. Open the PaperDeck desktop app and go to **Kindle > Configuration**.
+2. Enter your Kindle's local IP address and SSH credentials (default user: `root`).
+3. Click **Save**, then switch to **Kindle > Diagnostics and Installation**.
+4. Click **Check Kindle** to verify SSH, FBInk, and daemon scripts.
+5. Click **Install scripts** followed by **Start script**.
 
-```powershell
-npm run dev                # opens Electron in development
-npm run build              # typecheck + Electron build
-npm run build:win          # generates Windows installer
-npm run typecheck          # validates TypeScript
-npm test                   # runs Node tests
-npm run backend            # legacy standalone backend
-npm run supervisor         # legacy standalone supervisor
-npm run autostart:install  # registers Windows autostart
-npm run autostart:status   # shows Windows autostart status
-npm run autostart:stop     # stops Windows autostart
-npm run autostart:uninstall # removes Windows autostart
-```
+For a detailed step-by-step jailbreak and hardware preparation guide, see [KINDLE-INSTALLATION.md](KINDLE-INSTALLATION.md).
 
-Kindle commands should be run through the Electron UI. The `npm run kindle` and
-`npm run kindle:autostart` scripts exist for support and local diagnostics.
+---
 
-## Structure
+## 🛠️ Essential Commands
 
-```text
-backend/       local API, collectors, and authentication preflight
-build/         app icons
-kindle/        scripts executed on the Kindle
-locales/       UI, main, auth, and dashboard translations
-render/        HTML used to render the PNG
-scripts/       Node and PowerShell helpers
-src/main/      Electron main process
-src/preload/   secure bridges via contextBridge
-src/renderer/  React UI
-src/shared/    shared types
-test/          Node tests
-```
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Launch Electron desktop application in development mode with HMR |
+| `npm test` | Run complete Node.js test suite (`node:test`) |
+| `npm run typecheck` | Run strict TypeScript static analysis (main, preload, renderer) |
+| `npm run build` | Compile TypeScript and produce production Electron bundles |
+| `npm run build:mac` | Package native application for macOS (`.app` / `.dmg`) |
+| `npm run build:win` | Generate standalone installer for Windows (`PaperDeck-<version>-setup.exe`) |
 
-## Windows Installer Build
+---
 
-```powershell
-npm run build:win
-```
+## 📚 Documentation & Guides
 
-This command runs:
+- 🤖 **AI Providers Setup**: [docs/AI_PROVIDERS.md](docs/AI_PROVIDERS.md) — How to connect Claude Code, Antigravity, OpenCode, Codex, and OmniRouter.
+- 📟 **Kindle Preparation & Jailbreak**: [KINDLE-INSTALLATION.md](KINDLE-INSTALLATION.md) — Hardware setup, firmware matrix, FBInk, and diagrams.
+- 🎃 **Hacktoberfest Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md) — Detailed contribution rules and PR checklist.
+- 🤝 **Code of Conduct**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — Contributor Covenant v2.1.
+- 🧠 **Agentic Instructions**: [CLAUDE.md](CLAUDE.md) & [AGENTS.md](AGENTS.md) — Specs for Claude Code, Codex, OpenCode, and Antigravity agents.
+- 🌐 **Translations Reference**: [locales/README.md](locales/README.md) — How to add new languages.
+- 📜 **Changelog**: [CHANGELOG.md](CHANGELOG.md) — Version history.
 
-1. `npm run typecheck`
-2. `electron-vite build`
-3. `electron-builder --win`
+---
 
-Expected output:
+## 🔒 Privacy & Security
 
-```text
-release/Kindle-Dashboard-<version>-setup.exe
-```
+- **100% Local**: No personal metrics, telemetry, or API tokens are uploaded to external servers.
+- **Encrypted Credentials**: SSH passwords are encrypted using Electron's native `safeStorage` API.
+- **Zero Secrets**: No serial numbers, personal hostnames, or real IP addresses are committed to the repository.
 
-## Recommended Validation
+---
 
-```powershell
-npm test
-npm run typecheck
-npm run build
-```
+## 📄 License
 
-
-## Links
-
-- Change history: [CHANGELOG.md](CHANGELOG.md)
-- Kindle installation: [KINDLE-INSTALLATION.md](KINDLE-INSTALLATION.md)
-- Translations: [locales/README.md](locales/README.md)
-- Releases: [GitHub Releases](https://github.com/lucasrafaldini/kindle-dashboard/releases)
+This project is open source under the [MIT License](LICENSE) © 2026 **Lucas Rafaldini**.
+Original concept inspired by [alexishida/kindle-dashboard](https://github.com/alexishida/kindle-dashboard).

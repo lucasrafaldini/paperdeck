@@ -22,7 +22,7 @@ function sshOptions(config: StoredDashboardConfig): SshOptions {
   const password = decryptPassword(config)
 
   return {
-    host: config.kindleIp || '192.168.0.40',
+    host: config.kindleIp || '',
     password: password || undefined,
     port: config.kindlePort || 22,
     username: config.kindleUser || 'root',

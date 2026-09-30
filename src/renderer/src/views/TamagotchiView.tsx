@@ -43,7 +43,7 @@ const SPEED_OPTIONS = [
   { id: 'slow', label: 'Calmo', ms: 1000, desc: '1000ms · Relaxado' },
 ]
 
-const NAME_SUGGESTIONS = ['Memtchi', 'Pixel', 'Bolinha', 'Pipoca', 'Kuro', 'Mochi', 'Tama', 'FraterPet']
+const NAME_SUGGESTIONS = ['Memtchi', 'Pixel', 'Bolinha', 'Pipoca', 'Kuro', 'Mochi', 'Tama', 'DeckPet']
 
 function playRetroSound(type: 'feed' | 'play' | 'bath' | 'pet' | 'select' | 'save'): void {
   try {

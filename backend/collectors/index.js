@@ -9,6 +9,7 @@ const chaosmachine = require('./chaosmachine');
 const macstats = require('./macstats');
 const tamagotchi = require('./tamagotchi');
 const sitescraper = require('./sitescraper');
+const opencode = require('./opencode');
 const { readConfig } = require('../config');
 
 const REGISTRY = {
@@ -21,6 +22,7 @@ const REGISTRY = {
   macstats,
   tamagotchi,
   sitescraper,
+  opencode,
 };
 
 async function collectAll(requestedWidgets) {
@@ -42,7 +44,7 @@ async function collectAll(requestedWidgets) {
     updatedAt: new Date().toISOString(),
     source: 'live',
     tools,
-    dashboardTitle: config.dashboardTitle || 'Kindle Dashboard',
+    dashboardTitle: config.dashboardTitle || 'PaperDeck',
   };
 }
 

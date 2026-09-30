@@ -27,6 +27,20 @@ test('tamagotchi collector returns valid pet state and reacts to actions', async
   const bathed = tamagotchi.performAction('bath');
   assert.equal(bathed.cleanliness, 100);
 
+  // Test action play (drains energy)
+  const played = tamagotchi.performAction('play');
+  assert.ok(played.energy < 100);
+
+  // Test action sleep / rest (restores energy)
+  const rested = tamagotchi.performAction('sleep');
+  assert.equal(rested.isSleeping, true);
+  assert.ok(rested.energy >= played.energy);
+  assert.equal(rested.mood, 'sleeping');
+
+  // Test action wake
+  const awake = tamagotchi.performAction('wake');
+  assert.equal(awake.isSleeping, false);
+
   // Test action setCharacter
   const switched = tamagotchi.performAction('setCharacter', { character: 'kuchipatchi' });
   assert.equal(switched.character, 'kuchipatchi');

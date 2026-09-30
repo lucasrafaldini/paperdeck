@@ -22,6 +22,7 @@ const WIDGET_META: Record<string, { name: string; icon: string; desc: string }> 
   applemusic: { name: 'Apple Music', icon: '🎵', desc: 'Faixa e progresso' },
   chaosmachine: { name: 'Chaos Machine', icon: '🖥️', desc: 'Servidor Linux remoto' },
   codex: { name: 'OpenAI Codex', icon: '⚡', desc: 'Créditos e sessões' },
+  opencode: { name: 'OpenCode Local', icon: '💻', desc: 'Sessões, tokens e modelos' },
 }
 
 const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default: boolean }[]> = {
@@ -74,11 +75,17 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'limits', label: 'Limites e créditos', default: true },
     { id: 'spend', label: 'Custo USD e sessões', default: true },
   ],
+  opencode: [
+    { id: 'modelInfo', label: 'Modelo e status', default: true },
+    { id: 'statGrid', label: 'Grid de métricas', default: true },
+    { id: 'activeSession', label: 'Última sessão', default: true },
+    { id: 'historyChart', label: 'Gráfico histórico 7d', default: true },
+  ],
 }
 
 export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps): React.JSX.Element {
   const [blocks, setBlocks] = useState<DashboardBlock[]>([])
-  const [dashboardTitle, setDashboardTitle] = useState('Dashboard do Frater')
+  const [dashboardTitle, setDashboardTitle] = useState('PaperDeck')
   const [widgetOptions, setWidgetOptions] = useState<WidgetOptionsMap>({})
   const [customSites, setCustomSites] = useState<CustomSite[]>([])
   const [newSiteName, setNewSiteName] = useState('')
@@ -217,7 +224,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
         activeWidgets: activeTools,
         widgetOptions,
         customSites,
-        dashboardTitle: dashboardTitle.trim() || 'Kindle Dashboard',
+        dashboardTitle: dashboardTitle.trim() || 'PaperDeck',
       })
       await window.dashboard.renderNow()
       onSaved('Layout salvo e enviado ao Kindle com sucesso!')
@@ -315,7 +322,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
               <input
                 type="text"
                 value={dashboardTitle}
-                placeholder="Kindle Dashboard"
+                placeholder="PaperDeck"
                 onChange={(e) => setDashboardTitle(e.target.value)}
                 style={{
                   fontSize: '22px',
@@ -502,6 +509,12 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                     )}
                     {block.tool === 'codex' && (
                       <div>$4.20 gastos · 42 sessões ativas</div>
+                    )}
+                    {block.tool === 'opencode' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ fontWeight: 'bold' }}>🤖 deepseek-coder-v2:16b · ● Ativo</div>
+                        <div style={{ fontSize: '11px', opacity: 0.85 }}>4 Sessões · 621 Mensagens · 90.2M Tokens</div>
+                      </div>
                     )}
                   </div>
                 </div>

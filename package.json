@@ -1,9 +1,29 @@
 {
   "name": "paperdeck",
   "version": "2.0.0",
-  "private": true,
   "author": "Lucas Rafaldini",
-  "description": "PaperDeck — Personal e-ink smart workstation & companion dashboard.",
+  "license": "MIT",
+  "homepage": "https://github.com/lucasrafaldini/paperdeck#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucasrafaldini/paperdeck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lucasrafaldini/paperdeck/issues"
+  },
+  "description": "PaperDeck — Personal e-ink smart workstation & companion dashboard rendered to a Kindle over Wi-Fi.",
+  "keywords": [
+    "kindle",
+    "dashboard",
+    "e-ink",
+    "hacktoberfest",
+    "workstation",
+    "tamagotchi",
+    "claude",
+    "opencode",
+    "antigravity",
+    "electron"
+  ],
   "main": "dist/main/index.js",
   "engines": {
     "node": ">=24"

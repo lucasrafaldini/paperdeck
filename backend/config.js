@@ -6,7 +6,7 @@ const path = require('path');
 function getDataDir() {
   if (process.env.DASHBOARD_DATA_DIR) return process.env.DASHBOARD_DATA_DIR;
   if (/app\.asar/.test(__dirname)) {
-    return path.join(os.homedir(), 'Library', 'Application Support', 'com.alexi.kindle-dashboard');
+    return path.join(os.homedir(), 'Library', 'Application Support', 'PaperDeck');
   }
   return path.join(__dirname, '..', 'out');
 }
@@ -62,6 +62,12 @@ const DEFAULT_WIDGET_OPTIONS = {
     showDate: true,
     maxItems: 3,
   },
+  opencode: {
+    modelInfo: true,
+    statGrid: true,
+    activeSession: true,
+    historyChart: true,
+  },
 };
 
 const AVAILABLE_WIDGETS = [
@@ -69,6 +75,7 @@ const AVAILABLE_WIDGETS = [
   { id: 'omnirouter', name: 'Omni Router' },
   { id: 'antigravity', name: 'Antigravity AI' },
   { id: 'macstats', name: 'Mac System Stats' },
+  { id: 'opencode', name: 'OpenCode Local' },
   { id: 'tamagotchi', name: 'Mascote Virtual (Tamagotchi)' },
   { id: 'sitescraper', name: 'Monitor de Sites (Web Scraper / RSS)' },
   { id: 'applemusic', name: 'Apple Music' },
@@ -77,7 +84,7 @@ const AVAILABLE_WIDGETS = [
 ];
 
 const DEFAULT_CONFIG = {
-  dashboardTitle: 'Dashboard do Frater',
+  dashboardTitle: 'PaperDeck',
   activeWidgets: ['claude', 'antigravity', 'omnirouter'],
   availableWidgets: AVAILABLE_WIDGETS,
   widgetOptions: DEFAULT_WIDGET_OPTIONS,
@@ -117,7 +124,7 @@ function readConfig() {
         ...parsed,
         dashboardTitle: typeof parsed.dashboardTitle === 'string' && parsed.dashboardTitle.trim() !== ''
           ? parsed.dashboardTitle
-          : (parsed.dashboardTitle === '' ? 'Kindle Dashboard' : DEFAULT_CONFIG.dashboardTitle),
+          : (parsed.dashboardTitle === '' ? 'PaperDeck' : DEFAULT_CONFIG.dashboardTitle),
         availableWidgets: AVAILABLE_WIDGETS,
         widgetOptions: mergeWidgetOptions(DEFAULT_WIDGET_OPTIONS, parsed.widgetOptions),
         customSites: Array.isArray(parsed.customSites) ? parsed.customSites : [],

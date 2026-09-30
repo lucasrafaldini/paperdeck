@@ -159,7 +159,7 @@
   <button id="pip-close" type="button" aria-label="Close" title="Close">&times;</button>
   <div class="stage">
     <header>
-      <h1 id="title">Dashboard do Frater</h1>
+      <h1 id="title">PaperDeck</h1>
       <div class="stamp" id="stamp">-</div>
     </header>
     <div id="notify-box" class="notify-banner" style="display:none"></div>
@@ -224,7 +224,8 @@
     applemusic: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" fill="#000"/></svg>',
     antigravity: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#000" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chaosmachine: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" stroke="#000" stroke-width="2.2" fill="none"/><line x1="8" y1="21" x2="16" y2="21" stroke="#000" stroke-width="2.2"/><line x1="12" y1="17" x2="12" y2="21" stroke="#000" stroke-width="2.2"/><circle cx="6" cy="14" r="1" fill="#000"/></svg>',
-    macstats: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" stroke="#000" stroke-width="2.2" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="#000" stroke-width="2.2"/><line x1="9" y1="16" x2="9" y2="20" stroke="#000" stroke-width="2"/><line x1="15" y1="16" x2="15" y2="20" stroke="#000" stroke-width="2"/></svg>'
+    macstats: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" stroke="#000" stroke-width="2.2" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="#000" stroke-width="2.2"/><line x1="9" y1="16" x2="9" y2="20" stroke="#000" stroke-width="2"/><line x1="15" y1="16" x2="15" y2="20" stroke="#000" stroke-width="2"/></svg>',
+    opencode: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="3" stroke="#000" stroke-width="2.2" fill="none"/><path d="M7 8l4 4-4 4M13 16h4" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
 
   function locale() {
@@ -502,7 +503,7 @@
     }
 
     if (t.tool === 'tamagotchi') {
-      var moodIcon = t.mood === 'happy' ? '✨' : (t.mood === 'hungry' ? '🍲' : (t.mood === 'sleeping' ? '💤' : (t.mood === 'dirty' ? '🧼' : '🐾')));
+      var moodIcon = t.mood === 'happy' ? '✨' : (t.mood === 'hungry' ? '🍲' : (t.mood === 'sleeping' ? '💤' : (t.mood === 'tired' ? '🥱' : (t.mood === 'dirty' ? '🧼' : '🐾'))));
       h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 6px">' +
            '<div><span style="font-size:17px;font-weight:bold">' + (t.name || 'Mametchi') + '</span> ' +
            '<span style="font-size:12px;opacity:0.75">Nível ' + (t.level || 1) + ' · ' + (t.ageDays || 1) + 'd</span></div>' +
@@ -535,6 +536,44 @@
            '<div style="font-size:10px;text-transform:uppercase;font-weight:bold;letter-spacing:0.5px;opacity:0.75;margin-bottom:2px">' + (t.name || 'Mascote') + ' diz:</div>' +
            '<div style="font-size:13px;font-style:italic;font-weight:600;line-height:1.3;color:#000">"' + quote + '"</div>' +
            '</div></div>';
+
+      return h + '</div>';
+    }
+
+    if (t.tool === 'opencode') {
+      var statusBadge = t.status === 'Ativo' ? '● Ativo' : '○ Ocioso';
+      var modelName = t.model || 'Ollama Local';
+      if (opt.modelInfo !== false) {
+        h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 6px">' +
+             '<span style="font-size:13px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px">🤖 ' + modelName + '</span>' +
+             '<span style="font-size:12px;opacity:0.8">' + statusBadge + '</span>' +
+             '</div>';
+      }
+
+      var formatTok = function(n) {
+        if (!n) return '0';
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(0) + 'k';
+        return String(n);
+      };
+
+      if (opt.statGrid !== false) {
+        h += '<div class="stat-grid" style="margin:4px 0 6px">' +
+             '<div class="stat-box"><div class="stat-val">' + (t.totalSessions || 0) + '</div><div class="stat-lbl">Sessões</div></div>' +
+             '<div class="stat-box"><div class="stat-val">' + (t.totalMessages || 0) + '</div><div class="stat-lbl">Mensagens</div></div>' +
+             '<div class="stat-box"><div class="stat-val">' + formatTok(t.totalTokens || 0) + '</div><div class="stat-lbl">Tokens Totais</div></div>' +
+             '<div class="stat-box"><div class="stat-val">' + formatTok(t.cacheReadTokens || 0) + '</div><div class="stat-lbl">Cache Read</div></div>' +
+             '</div>';
+      }
+
+      if (opt.activeSession !== false && t.activeSession) {
+        h += '<div style="margin:4px 0 6px;padding:4px 8px;border:1.5px solid #000;border-radius:5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+             '<strong>Última Sessão:</strong> ' + t.activeSession + '</div>';
+      }
+
+      if (opt.historyChart !== false && Array.isArray(t.historyPoints)) {
+        h += renderSvgHistoryChart('Mensagens OpenCode (7 dias)', t.historyPoints);
+      }
 
       return h + '</div>';
     }

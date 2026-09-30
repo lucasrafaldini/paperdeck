@@ -26,6 +26,15 @@ mac:
   icon: build/icon.png
   category: public.app-category.developer-tools
   darkModeSupport: true
+  artifactName: PaperDeck-${version}-${arch}.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: build/icon.png
+  category: Development
+  artifactName: PaperDeck-${version}-${arch}.${ext}
 
 win:
   target: nsis

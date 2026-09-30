@@ -45,20 +45,20 @@ function defaultStoredConfig(): StoredDashboardConfig {
   const defaultDevices: KindleDevice[] = [
     {
       id: 'kindle-1',
-      name: 'Kindle Principal (Mesa)',
-      ip: '192.168.0.40',
+      name: 'Kindle',
+      ip: '',
       port: 22,
       user: 'root',
-      notes: 'Kindle Touch 3 (KT3)',
+      notes: '',
     },
   ]
 
   return {
-    dashboardTitle: 'Dashboard do Frater',
+    dashboardTitle: 'PaperDeck',
     dashboardUrl: defaultDashboardUrl(),
     language: 'system',
     kindleFullRefreshEvery: 20,
-    kindleIp: '192.168.0.40',
+    kindleIp: '',
     kindlePort: 22,
     kindleRefreshInterval: 180,
     kindleUser: 'root',
@@ -100,7 +100,7 @@ function hasSavedPassword(config: StoredDashboardConfig): boolean {
 
 export function publicConfig(config: StoredDashboardConfig): DashboardConfig {
   return {
-    dashboardTitle: config.dashboardTitle ?? 'Dashboard do Frater',
+    dashboardTitle: config.dashboardTitle ?? 'PaperDeck',
     dashboardUrl: config.dashboardUrl,
     kindleFullRefreshEvery: config.kindleFullRefreshEvery,
     kindleIp: config.kindleIp,
@@ -132,17 +132,17 @@ export async function loadConfig(): Promise<StoredDashboardConfig> {
       : [
           {
             id: 'kindle-1',
-            name: 'Kindle Principal (Mesa)',
+            name: 'Kindle',
             ip: kindleIp,
             port: kindlePort,
             user: kindleUser,
-            notes: 'Kindle Touch 3 (KT3)',
+            notes: '',
           },
         ]
     const activeKindleId = typeof raw.activeKindleId === 'string' && raw.activeKindleId ? raw.activeKindleId : kindleDevices[0].id
     const dashboardTitle = typeof raw.dashboardTitle === 'string' && raw.dashboardTitle.trim() !== ''
       ? raw.dashboardTitle.trim()
-      : (raw.dashboardTitle === '' ? 'Kindle Dashboard' : defaults.dashboardTitle)
+      : (raw.dashboardTitle === '' ? 'PaperDeck' : defaults.dashboardTitle)
 
     dashboardConfig = {
       ...defaults,
@@ -213,7 +213,7 @@ export async function saveConfig(raw: unknown): Promise<DashboardConfig> {
   const password = typeof input.kindlePassword === 'string' ? input.kindlePassword : ''
 
   const rawIp = typeof input.kindleIp === 'string' ? input.kindleIp.trim() : ''
-  const kindleIp = rawIp || previous.kindleIp || '192.168.0.40'
+  const kindleIp = rawIp || previous.kindleIp || ''
 
   const rawUser = typeof input.kindleUser === 'string' ? input.kindleUser.trim() : ''
   const kindleUser = rawUser || previous.kindleUser || 'root'
@@ -225,11 +225,11 @@ export async function saveConfig(raw: unknown): Promise<DashboardConfig> {
     : (previous.kindleDevices || [
         {
           id: 'kindle-1',
-          name: 'Kindle Principal (Mesa)',
+          name: 'Kindle',
           ip: kindleIp,
           port: kindlePort,
           user: kindleUser,
-          notes: 'Kindle Touch 3 (KT3)',
+          notes: '',
         },
       ])
 
@@ -251,8 +251,8 @@ export async function saveConfig(raw: unknown): Promise<DashboardConfig> {
   const next: StoredDashboardConfig = {
     ...previous,
     dashboardTitle: typeof input.dashboardTitle === 'string'
-      ? (input.dashboardTitle.trim() || 'Kindle Dashboard')
-      : (previous.dashboardTitle ?? 'Dashboard do Frater'),
+      ? (input.dashboardTitle.trim() || 'PaperDeck')
+      : (previous.dashboardTitle ?? 'PaperDeck'),
     dashboardUrl: normalizedDashboardUrl(requiredString(input, 'dashboardUrl', 500)),
     kindleFullRefreshEvery: numberField(input, 'kindleFullRefreshEvery', previous.kindleFullRefreshEvery, 1000),
     kindleIp,
@@ -287,7 +287,7 @@ export async function setDashboardTitle(raw: unknown): Promise<DashboardConfig> 
   const title = typeof raw === 'string' ? raw.trim() : ''
   const next: StoredDashboardConfig = {
     ...previous,
-    dashboardTitle: title || 'Kindle Dashboard',
+    dashboardTitle: title || 'PaperDeck',
   }
   await writeConfig(next)
   return publicConfig(next)

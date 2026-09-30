@@ -93,9 +93,9 @@ function readAccountData() {
       id: 0,
       params: {
         clientInfo: {
-          name: 'kindle_dashboard',
-          title: 'Kindle Dashboard',
-          version: '1.0.7',
+          name: 'paperdeck',
+          title: 'PaperDeck',
+          version: '2.0.0',
         },
         capabilities: { experimentalApi: true },
       },

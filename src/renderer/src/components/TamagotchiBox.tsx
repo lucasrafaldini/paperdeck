@@ -11,12 +11,14 @@ interface PetState {
   happiness: number
   energy: number
   cleanliness?: number
+  isSleeping?: boolean
   mood: string
   statusText: string
   feedCount?: number
   petCount?: number
   playCount?: number
   bathCount?: number
+  sleepCount?: number
 }
 
 interface TamagotchiBoxProps {
@@ -25,7 +27,7 @@ interface TamagotchiBoxProps {
   onAction?: (action: string) => void
 }
 
-function playRetroSound(type: 'feed' | 'play' | 'bath' | 'pet' | 'select'): void {
+function playRetroSound(type: 'feed' | 'play' | 'bath' | 'pet' | 'select' | 'sleep'): void {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     if (!AudioCtx) return
@@ -59,6 +61,10 @@ function playRetroSound(type: 'feed' | 'play' | 'bath' | 'pet' | 'select'): void
     } else if (type === 'pet') {
       playTone(587, now, 0.1)
       playTone(740, now + 0.1, 0.18, 'sine', 0.06)
+    } else if (type === 'sleep') {
+      playTone(523, now, 0.12, 'sine', 0.05)
+      playTone(392, now + 0.12, 0.15, 'sine', 0.04)
+      playTone(330, now + 0.27, 0.25, 'sine', 0.03)
     } else {
       playTone(880, now, 0.05, 'square', 0.02)
     }
@@ -113,14 +119,18 @@ export function TamagotchiBox({
   }, [])
 
   const handleAction = async (
-    actionName: 'feed' | 'play' | 'bath' | 'pet',
+    actionName: 'feed' | 'play' | 'bath' | 'pet' | 'sleep' | 'wake',
     msg: string
   ): Promise<void> => {
     if (isBusy) return
     setIsBusy(true)
     setActiveAction(actionName)
     setFeedback(msg)
-    playRetroSound(actionName)
+    if (actionName === 'sleep' || actionName === 'wake') {
+      playRetroSound('sleep')
+    } else {
+      playRetroSound(actionName)
+    }
 
     if (actionTimeout.current) clearTimeout(actionTimeout.current)
     actionTimeout.current = window.setTimeout(() => {
@@ -154,6 +164,13 @@ export function TamagotchiBox({
           now.happiness = Math.min(100, now.happiness + 20)
         } else if (actionName === 'pet') {
           now.happiness = Math.min(100, now.happiness + 25)
+        } else if (actionName === 'sleep') {
+          now.isSleeping = !now.isSleeping
+          now.energy = Math.min(100, (now.energy || 30) + 45)
+          now.happiness = Math.min(100, (now.happiness || 80) + 10)
+        } else if (actionName === 'wake') {
+          now.isSleeping = false
+          now.energy = Math.min(100, (now.energy || 50) + 15)
         }
         return now
       })
@@ -191,7 +208,8 @@ export function TamagotchiBox({
   else if (activeAction === 'play') activeFrame = charDef.frames.play
   else if (activeAction === 'bath') activeFrame = charDef.frames.bath
   else if (activeAction === 'pet') activeFrame = charDef.frames.pet
-  else if (pet.mood === 'sleeping') activeFrame = charDef.frames.sleep
+  else if (activeAction === 'sleep') activeFrame = charDef.frames.sleep
+  else if (pet.mood === 'sleeping' || pet.mood === 'tired' || pet.isSleeping) activeFrame = charDef.frames.sleep
   else activeFrame = frameToggle === 0 ? charDef.frames.idle_1 : charDef.frames.idle_2
 
   const hunger = pet.hunger ?? 25
@@ -298,6 +316,9 @@ export function TamagotchiBox({
           )}
           {activeAction === 'pet' && (
             <span style={{ position: 'absolute', top: 2, right: 4, fontSize: '16px' }}>❤️</span>
+          )}
+          {activeAction === 'sleep' && (
+            <span style={{ position: 'absolute', top: 2, right: 4, fontSize: '16px', animation: 'bounce 0.8s infinite' }}>💤</span>
           )}
 
           {/* Renderizador do Sprite 16x16 em SVG com crisp edges */}
@@ -411,8 +432,8 @@ export function TamagotchiBox({
         </div>
       </div>
 
-      {/* Action Buttons Diretamente no Box (Alimentar, Brincar de pegar, Dar banho, Fazer carinho) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+      {/* Action Buttons Diretamente no Box (Alimentar, Brincar, Soneca, Dar banho, Fazer carinho) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
         <button
           type="button"
           disabled={isBusy}
@@ -461,6 +482,35 @@ export function TamagotchiBox({
         >
           <span style={{ fontSize: '15px' }}>🎾</span>
           <span>Brincar</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={() =>
+            pet.isSleeping
+              ? handleAction('wake', '☀️ Bom dia! Acordou revigorado!')
+              : handleAction('sleep', '💤 Zzz... Soneca revigorante!')
+          }
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '2px',
+            padding: '8px 4px',
+            background: activeAction === 'sleep' || pet.isSleeping ? 'var(--accent, #2196f3)' : 'var(--bg)',
+            color: activeAction === 'sleep' || pet.isSleeping ? '#fff' : 'var(--text)',
+            border: '1px solid var(--line)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '11px',
+            fontWeight: 600,
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span style={{ fontSize: '15px' }}>{pet.isSleeping ? '☀️' : '💤'}</span>
+          <span>{pet.isSleeping ? 'Acordar' : 'Soneca'}</span>
         </button>
 
         <button

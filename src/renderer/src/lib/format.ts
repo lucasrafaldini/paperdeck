@@ -47,7 +47,7 @@ export function formFromConfig(config: DashboardConfig): ConfigForm {
   return {
     dashboardUrl: config.dashboardUrl,
     kindleFullRefreshEvery: String(config.kindleFullRefreshEvery || 20),
-    kindleIp: config.kindleIp || '192.168.0.40',
+    kindleIp: config.kindleIp || '',
     kindlePassword: '',
     kindlePort: String(config.kindlePort || 22),
     kindleRefreshInterval: String(config.kindleRefreshInterval || 180),
@@ -60,7 +60,7 @@ export function inputFromForm(form: ConfigForm, extra?: Partial<DashboardConfigI
   return {
     dashboardUrl: form.dashboardUrl,
     kindleFullRefreshEvery: Number.parseInt(form.kindleFullRefreshEvery, 10) || 20,
-    kindleIp: form.kindleIp || '192.168.0.40',
+    kindleIp: form.kindleIp || '',
     kindlePassword: form.kindlePassword,
     kindlePort: Number.parseInt(form.kindlePort, 10) || 22,
     kindleRefreshInterval: Number.parseInt(form.kindleRefreshInterval, 10) || 180,

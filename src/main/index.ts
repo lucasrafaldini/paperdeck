@@ -83,7 +83,7 @@ if (!hasLock) {
     scheduleRender(config.kindleRefreshInterval)
     registerIpc({ quitApplication })
     await startBackend()
-    createMainWindow({ showOnReady: !config.setupComplete })
+    createMainWindow({ showOnReady: true })
     createTray({
       onOpenPanel: showPanelWindow,
       onOpenSettings: showSettingsWindow,

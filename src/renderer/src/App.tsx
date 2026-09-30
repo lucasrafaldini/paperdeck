@@ -255,8 +255,8 @@ export default function App(): React.JSX.Element {
       : [
           {
             id: 'kindle-1',
-            name: 'Kindle Principal (Mesa)',
-            ip: config.kindleIp || '192.168.0.40',
+            name: 'Kindle',
+            ip: config.kindleIp || '',
             port: config.kindlePort || 22,
             user: config.kindleUser || 'root',
           },
@@ -584,7 +584,7 @@ export default function App(): React.JSX.Element {
 
           {nav === 'configuracoes' ? (
             <SettingsView
-              dashboardTitle={config?.dashboardTitle || 'Dashboard do Frater'}
+              dashboardTitle={config?.dashboardTitle || 'PaperDeck'}
               disabled={!config}
               languagePreference={config?.language ?? 'system'}
               onChangeDashboardTitle={(title) => void handleSaveDashboardTitle(title)}

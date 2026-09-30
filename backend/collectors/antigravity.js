@@ -12,25 +12,53 @@ let cache = { at: 0, data: null };
 let lastKnownPort = null;
 let lastKnownCsrf = null;
 
+function countLinesFast(filePath) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(64 * 1024);
+    let count = 0;
+    let bytesRead = 0;
+    while ((bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null)) > 0) {
+      for (let i = 0; i < bytesRead; i++) {
+        if (buffer[i] === 10) count++;
+      }
+    }
+    fs.closeSync(fd);
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
 function discoverServer() {
   try {
     const ps = execSync('ps aux | grep "language_server.*--csrf_token" | grep -v grep', { encoding: 'utf8' });
-    const matchPid = ps.match(/^\S+\s+(\d+)/);
-    const matchCsrf = ps.match(/--csrf_token\s+([a-f0-9-]+)/);
-    if (!matchPid || !matchCsrf) return null;
-    const pid = matchPid[1];
-    const csrf = matchCsrf[1];
+    const lines = ps.split('\n').filter((l) => l.includes('language_server') && l.includes('--csrf_token'));
+    if (!lines.length) return null;
 
-    const lsof = execSync(`lsof -Pan -p ${pid} -i | grep LISTEN`, { encoding: 'utf8' });
-    const ports = [];
-    for (const line of lsof.split('\n')) {
-      const m = line.match(/:(\d+)\s+\(LISTEN\)/);
-      if (m) {
-        const p = parseInt(m[1], 10);
-        if (!ports.includes(p)) ports.push(p);
-      }
+    for (const line of lines) {
+      const matchCsrf = line.match(/--csrf_token\s+([a-f0-9-]+)/);
+      const cols = line.trim().split(/\s+/);
+      const pid = cols[1];
+      if (!pid || !matchCsrf) continue;
+      const csrf = matchCsrf[1];
+
+      try {
+        const lsof = execSync(`lsof -Pan -p ${pid} -i | grep LISTEN`, { encoding: 'utf8' });
+        const ports = [];
+        for (const l of lsof.split('\n')) {
+          const m = l.match(/:(\d+)\s+\(LISTEN\)/);
+          if (m) {
+            const p = parseInt(m[1], 10);
+            if (!ports.includes(p)) ports.push(p);
+          }
+        }
+        if (ports.length > 0) {
+          return { pid, csrf, ports };
+        }
+      } catch {}
     }
-    return { pid, csrf, ports };
+    return null;
   } catch {
     return null;
   }
@@ -44,7 +72,7 @@ function queryQuotaEndpoint(port, csrf) {
       path: '/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary',
       method: 'POST',
       rejectUnauthorized: false,
-      timeout: 600,
+      timeout: 1200,
       headers: {
         'Content-Type': 'application/json',
         'x-codeium-csrf-token': csrf,
@@ -76,11 +104,13 @@ function queryQuotaEndpoint(port, csrf) {
 }
 
 async function fetchLiveQuota() {
-  // Tenta porta conhecida primeiro
   if (lastKnownPort && lastKnownCsrf) {
     try {
       return await queryQuotaEndpoint(lastKnownPort, lastKnownCsrf);
-    } catch {}
+    } catch {
+      lastKnownPort = null;
+      lastKnownCsrf = null;
+    }
   }
 
   const info = discoverServer();
@@ -97,6 +127,41 @@ async function fetchLiveQuota() {
   return null;
 }
 
+function parseWindows(quotaData) {
+  const windows = [];
+  if (!quotaData || !Array.isArray(quotaData.groups) || quotaData.groups.length === 0) {
+    return windows;
+  }
+
+  // Grupo principal Gemini Models
+  const geminiGroup = quotaData.groups.find((g) => /gemini/i.test(g.displayName)) || quotaData.groups[0];
+  const buckets = geminiGroup.buckets || [];
+  const b5h = buckets.find((b) => b.window === '5h');
+  const bWeekly = buckets.find((b) => b.window === 'weekly');
+
+  if (b5h) {
+    const remaining = typeof b5h.remainingFraction === 'number' ? b5h.remainingFraction : 1;
+    const usedPct = Math.max(0, Math.min(100, Math.round((1 - remaining) * 100)));
+    windows.push({
+      name: '5h',
+      pct: usedPct,
+      resets_at: b5h.resetTime || null,
+    });
+  }
+
+  if (bWeekly) {
+    const remaining = typeof bWeekly.remainingFraction === 'number' ? bWeekly.remainingFraction : 1;
+    const usedPct = Math.max(0, Math.min(100, Math.round((1 - remaining) * 100)));
+    windows.push({
+      name: '7d',
+      pct: usedPct,
+      resets_at: bWeekly.resetTime || null,
+    });
+  }
+
+  return windows;
+}
+
 async function collect() {
   const now = Date.now();
   if (cache.data && (now - cache.at < CACHE_TTL_MS)) {
@@ -111,12 +176,13 @@ async function collect() {
     let totalConversations = 0;
     let recentConversations = [];
     let latestConvId = null;
+    let stats = [];
 
     if (fs.existsSync(convDir)) {
       const files = fs.readdirSync(convDir).filter((f) => f.endsWith('.db'));
       totalConversations = files.length;
 
-      const stats = files.map((f) => {
+      stats = files.map((f) => {
         try {
           const stat = fs.statSync(path.join(convDir, f));
           return { id: f.replace('.db', ''), mtime: stat.mtimeMs };
@@ -134,7 +200,7 @@ async function collect() {
     }
 
     const historyPoints = [0, 0, 0, 0, 0, 0, 0];
-    if (fs.existsSync(convDir)) {
+    if (stats.length > 0) {
       const todayStart = new Date(now).setHours(0, 0, 0, 0);
       const dayMs = 24 * 3600 * 1000;
       for (let idx = 0; idx < 7; idx++) {
@@ -155,43 +221,12 @@ async function collect() {
       if (latestConvId) {
         const transcriptPath = path.join(brainDir, latestConvId, '.system_generated', 'logs', 'transcript.jsonl');
         if (fs.existsSync(transcriptPath)) {
-          try {
-            const content = fs.readFileSync(transcriptPath, 'utf8');
-            activeSessionSteps = content.trim().split('\n').filter(Boolean).length;
-          } catch {}
+          activeSessionSteps = countLinesFast(transcriptPath);
         }
       }
     }
 
-    let windows = [];
-    if (quotaData && Array.isArray(quotaData.groups) && quotaData.groups.length > 0) {
-      // Grupo principal Gemini Models
-      const geminiGroup = quotaData.groups.find((g) => /gemini/i.test(g.displayName)) || quotaData.groups[0];
-      const buckets = geminiGroup.buckets || [];
-      const b5h = buckets.find((b) => b.window === '5h');
-      const bWeekly = buckets.find((b) => b.window === 'weekly');
-
-      if (b5h) {
-        const remaining = typeof b5h.remainingFraction === 'number' ? b5h.remainingFraction : 1;
-        const usedPct = Math.max(0, Math.min(100, Math.round((1 - remaining) * 100)));
-        windows.push({
-          name: '5h',
-          pct: usedPct,
-          resets_at: b5h.resetTime || null,
-        });
-      }
-
-      if (bWeekly) {
-        const remaining = typeof bWeekly.remainingFraction === 'number' ? bWeekly.remainingFraction : 1;
-        const usedPct = Math.max(0, Math.min(100, Math.round((1 - remaining) * 100)));
-        windows.push({
-          name: '7d',
-          pct: usedPct,
-          resets_at: bWeekly.resetTime || null,
-        });
-      }
-    }
-
+    const windows = parseWindows(quotaData);
     const isRecentlyActive = recentConversations.length > 0 && recentConversations[0].timeAgoMin <= 15;
     const status = isRecentlyActive ? 'Ativo' : 'Ocioso';
 
@@ -221,4 +256,8 @@ async function collect() {
   }
 }
 
-module.exports = { collect };
+module.exports = {
+  collect,
+  parseWindows,
+  countLinesFast,
+};

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Backend do Kindle Dashboard.
+// Backend do PaperDeck.
 // - Serve a API JSON normalizada, o render HTML->PNG e o PNG/loop para o Kindle.
 // - CORS aberto (Access-Control-Allow-Origin: *).
 //
@@ -20,7 +20,7 @@ const configMgr = require('./config');
 function getKindleStatusFile() {
   if (process.env.DASHBOARD_DATA_DIR) return path.join(process.env.DASHBOARD_DATA_DIR, 'kindle-status.json');
   if (/app\.asar/.test(__dirname)) {
-    return path.join(os.homedir(), 'Library', 'Application Support', 'com.alexi.kindle-dashboard', 'kindle-status.json');
+    return path.join(os.homedir(), 'Library', 'Application Support', 'PaperDeck', 'kindle-status.json');
   }
   return path.join(__dirname, '..', 'out', 'kindle-status.json');
 }
