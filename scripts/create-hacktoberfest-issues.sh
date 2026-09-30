@@ -25,8 +25,18 @@ for file in "$ISSUES_DIR"/*.md; do
   # Extract title from frontmatter
   TITLE=$(grep '^title:' "$file" | sed -E 's/^title:[[:space:]]*"?([^"]*)"?/\1/')
   
-  # Extract labels
-  LABELS=$(grep '^labels:' "$file" | sed -E 's/^labels:[[:space:]]*\[(.*)\]/\1/' | tr -d '" ' || echo "hacktoberfest")
+  # Extract labels cleanly preserving spaces
+  LABEL_ARGS=()
+  while IFS= read -r lbl; do
+    [ -n "$lbl" ] && LABEL_ARGS+=(--label "$lbl")
+  done < <(node -e "
+    const fs = require('fs');
+    const content = fs.readFileSync('$file', 'utf8');
+    const m = content.match(/labels:\s*\[(.*?)\]/);
+    if (m) {
+      JSON.parse('[' + m[1] + ']').forEach(l => console.log(l));
+    }
+  ")
   
   # Extract body (everything after the second ---)
   BODY=$(awk 'BEGIN{c=0} /^---/{c++; next} c>=2{print}' "$file")
@@ -35,7 +45,7 @@ for file in "$ISSUES_DIR"/*.md; do
   gh issue create \
     --repo "$REPO" \
     --title "$TITLE" \
-    --label "$LABELS" \
+    "${LABEL_ARGS[@]}" \
     --body "$BODY"
 done
 
