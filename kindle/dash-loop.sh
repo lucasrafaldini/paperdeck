@@ -7,14 +7,18 @@
 # - Auto-recuperação e auto-atualização via backend Mac
 
 PC="${PC:-}"
-IMG=/mnt/us/dash.png
+# DASH_DIR só é sobrescrito nos testes; no Kindle é sempre /mnt/us.
+DASH_DIR="${DASH_DIR:-/mnt/us}"
+IMG="$DASH_DIR/dash.png"
 INTERVAL="${INTERVAL:-180}"         # segundos entre atualizações diurnas (padrão 3 min)
 NIGHT_INTERVAL="${NIGHT_INTERVAL:-3600}" # segundos entre atualizações em deep sleep (padrão 1 hora)
 FULL_EVERY="${FULL_EVERY:-20}"     # full-refresh (flash anti-ghosting) a cada N ciclos
 WIFI_RETRY_EVERY="${WIFI_RETRY_EVERY:-3}" # tenta recuperar WiFi após N falhas seguidas
 MAX_FAILURES="${MAX_FAILURES:-0}"   # para o script após N falhas consecutivas (0 = sem limite)
-STOP=/mnt/us/dash-loop.stop
-PIDFILE=/mnt/us/dash-loop.pid
+STOP="$DASH_DIR/dash-loop.stop"
+PIDFILE="$DASH_DIR/dash-loop.pid"
+SELF="$DASH_DIR/dash-loop.sh"
+SLEEP_PID=""
 
 if [ -x /mnt/us/libkh/bin/fbink ]; then
   FBINK=/mnt/us/libkh/bin/fbink
@@ -35,11 +39,33 @@ if [ -z "$PC" ]; then
   exit 2
 fi
 
-# Instância única: mata a anterior se houver
-if [ -f "$PIDFILE" ]; then
+# Instância única. Versões antigas ignoravam o TERM (trap sem exit), então
+# além do PID registrado também derrubamos qualquer outro dash-loop.sh vivo.
+stop_other_loops() {
+  PIDS=""
+  # Loop no shell principal (sem $(...)) para não listar subshells nossos.
+  for proc in /proc/[0-9]*; do
+    pid=${proc#/proc/}
+    [ "$pid" = "$$" ] && continue
+    cmd=$(tr '\000' ' ' < "$proc/cmdline" 2>/dev/null)
+    case "$cmd" in
+      "sh $SELF "|"/bin/sh $SELF ") PIDS="$PIDS $pid" ;;
+    esac
+  done
+  # Sem /proc (fora do Kindle), confia no PID registrado se ainda for o loop.
   OLD=$(cat "$PIDFILE" 2>/dev/null)
-  if [ -n "$OLD" ] && kill -0 "$OLD" 2>/dev/null; then kill "$OLD" 2>/dev/null; sleep 1; fi
-fi
+  if [ ! -d /proc/1 ] && [ -n "$OLD" ] && [ "$OLD" != "$$" ] &&
+     ps -p "$OLD" -o command= 2>/dev/null | grep -q 'dash-loop.sh'; then
+    PIDS="$PIDS $OLD"
+  fi
+  [ -z "$(echo "$PIDS" | tr -d ' ')" ] && return 0
+  for pid in $PIDS; do kill "$pid" 2>/dev/null; done
+  sleep 2
+  for pid in $PIDS; do kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null; done
+  return 0
+}
+
+stop_other_loops
 echo $$ > "$PIDFILE"
 
 turn_off_frontlight() {
@@ -51,23 +77,47 @@ turn_off_frontlight() {
 }
 
 cleanup() {
+  [ -n "$SLEEP_PID" ] && kill "$SLEEP_PID" 2>/dev/null
   lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null
   lipc-set-prop com.lab126.powerd disableScreenOff 0 2>/dev/null
   lipc-set-prop com.lab126.wifid enable 1 2>/dev/null
-  rm -f "$PIDFILE" "$IMG.tmp"
+  # Só remove o PID se ainda for o nosso (um loop novo pode já ter assumido).
+  [ "$(cat "$PIDFILE" 2>/dev/null)" = "$$" ] && rm -f "$PIDFILE"
+  rm -f "$IMG.tmp"
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+# Sem o exit o shell rodava o cleanup e continuava no loop para sempre.
+trap 'exit 0' INT TERM
+
+# sleep interrompível: um TERM encerra na hora em vez de esperar o sleep acabar.
+nap() {
+  sleep "$1" &
+  SLEEP_PID=$!
+  wait "$SLEEP_PID" 2>/dev/null
+  SLEEP_PID=""
+}
+
+# Nem todo firmware expõe ipAddress no lipc; cai para ifconfig/ip.
+my_ip() {
+  IP=$(lipc-get-prop com.lab126.wifid ipAddress 2>/dev/null)
+  case "$IP" in
+    *.*.*.*) echo "$IP"; return 0 ;;
+  esac
+  IP=$(ifconfig wlan0 2>/dev/null | sed -n 's/.*inet addr:\([0-9.]*\).*/\1/p' | head -n 1)
+  [ -z "$IP" ] && IP=$(ip -4 addr show wlan0 2>/dev/null | sed -n 's/.*inet \([0-9.]*\)\/.*/\1/p' | head -n 1)
+  [ -n "$IP" ] && echo "$IP"
+}
 
 reconnect_wifi() {
   STATE=$(lipc-get-prop com.lab126.wifid cmState 2>/dev/null)
   echo "[dash-loop] $(date) recuperando WiFi (estado=${STATE:-desconhecido})"
   lipc-set-prop com.lab126.wifid enable 1 >/dev/null 2>&1
   wpa_cli -i wlan0 reassociate >/dev/null 2>&1
-  sleep 6
+  nap 6
 }
 
 discover_pc() {
-  ENV_FILE=/mnt/us/dash-autostart.env
+  ENV_FILE="$DASH_DIR/dash-autostart.env"
   # 1. Tenta mDNS
   for host in "${PC_HOSTNAME:-paperdeck.local}" "paperdeck.local" "localhost"; do
     if curl -fsS --connect-timeout 2 --max-time 3 "http://${host}:8787/api/ping" >/dev/null 2>&1; then
@@ -78,23 +128,50 @@ discover_pc() {
       return 0
     fi
   done
-  # 2. Varre sub-rede local procurando pela porta 8787
-  MY_IP=$(lipc-get-prop com.lab126.wifid ipAddress 2>/dev/null)
+  # 2. Varre a sub-rede local inteira (.1-.254) procurando o backend
+  MY_IP=$(my_ip)
   [ -z "$MY_IP" ] && return 1
   PREFIX=$(echo "$MY_IP" | cut -d. -f1-3)
-  for octet in 2 3 4 5 10 15 20 25 30 35 40 45 50; do
-    TEST_IP="${PREFIX}.${octet}"
-    if [ "$TEST_IP" != "$MY_IP" ]; then
-      if curl -fsS --connect-timeout 1 --max-time 2 "http://${TEST_IP}:8787/api/ping" >/dev/null 2>&1; then
-        PC="http://${TEST_IP}:8787/dash.png"
-        [ -f "$ENV_FILE" ] && sed -i '/^PC=/d' "$ENV_FILE" 2>/dev/null
-        echo "PC=$PC" >> "$ENV_FILE"
-        echo "[dash-loop] auto-descoberta: Host encontrado em $TEST_IP ($PC)"
-        return 0
-      fi
-    fi
-  done
+  PORT=$(echo "$PC" | sed -n 's#^https\{0,1\}://[^/:]*:\([0-9][0-9]*\).*#\1#p')
+  [ -z "$PORT" ] && PORT=8787
+  TEST_IP=$(scan_subnet "$PREFIX" "$MY_IP" "$PORT")
+  if [ -n "$TEST_IP" ]; then
+    PC="http://${TEST_IP}:${PORT}/dash.png"
+    [ -f "$ENV_FILE" ] && sed -i '/^PC=/d' "$ENV_FILE" 2>/dev/null
+    echo "PC=$PC" >> "$ENV_FILE"
+    echo "[dash-loop] auto-descoberta: Host encontrado em $TEST_IP ($PC)"
+    return 0
+  fi
   return 1
+}
+
+# Procura o backend em PREFIX.1-254 com lotes de 32 curls paralelos (~2s por
+# lote). Imprime o primeiro IP que responde a /api/ping.
+scan_subnet() {
+  S_PREFIX="$1"
+  S_SELF="$2"
+  S_PORT="${3:-8787}"
+  FOUND="/tmp/dash-found.$$"
+  rm -f "$FOUND"
+  start=1
+  while [ "$start" -le 254 ] && [ ! -s "$FOUND" ]; do
+    end=$((start + 31))
+    [ "$end" -gt 254 ] && end=254
+    o=$start
+    while [ "$o" -le "$end" ]; do
+      ip="${S_PREFIX}.${o}"
+      if [ "$ip" != "$S_SELF" ]; then
+        ( curl -fsS --connect-timeout 1 --max-time 2 "http://${ip}:${S_PORT}/api/ping" >/dev/null 2>&1 && echo "$ip" >> "$FOUND" ) &
+      fi
+      o=$((o + 1))
+    done
+    wait
+    start=$((end + 1))
+  done
+  if [ -s "$FOUND" ]; then
+    head -n 1 "$FOUND"
+  fi
+  rm -f "$FOUND"
 }
 
 wait_for_wifi() {
@@ -165,7 +242,7 @@ enter_deep_sleep() {
   sleep 1
 
   # 3. Suspende SoC para RAM (Kernel dorme aqui com o dashboard fixo na tela)
-  echo mem > /sys/power/state 2>/dev/null || sleep "$SLEEP_TIME"
+  echo mem > /sys/power/state 2>/dev/null || nap "$SLEEP_TIME"
 
   # --- CPU ACORDOU ---
   echo "[dash-loop] $(date) acordou do deep sleep"
@@ -178,21 +255,21 @@ enter_deep_sleep() {
 
 check_auto_update() {
   UPDATE_URL="${PC%/dash.png}/kindle/dash-loop.sh"
-  if curl -fsS --connect-timeout 4 --max-time 10 "$UPDATE_URL" -o "/mnt/us/dash-loop.sh.new" 2>/dev/null && [ -s "/mnt/us/dash-loop.sh.new" ]; then
-    NEW_HASH=$(md5sum < /mnt/us/dash-loop.sh.new 2>/dev/null | cut -d' ' -f1)
-    CUR_HASH=$(md5sum < /mnt/us/dash-loop.sh 2>/dev/null | cut -d' ' -f1)
+  if curl -fsS --connect-timeout 4 --max-time 10 "$UPDATE_URL" -o "$SELF.new" 2>/dev/null && [ -s "$SELF.new" ]; then
+    NEW_HASH=$(md5sum < "$SELF.new" 2>/dev/null | cut -d' ' -f1)
+    CUR_HASH=$(md5sum < "$SELF" 2>/dev/null | cut -d' ' -f1)
     if [ -n "$NEW_HASH" ] && [ -n "$CUR_HASH" ] && [ "$NEW_HASH" != "$CUR_HASH" ]; then
-      if sh -n "/mnt/us/dash-loop.sh.new" 2>/dev/null; then
+      if sh -n "$SELF.new" 2>/dev/null; then
         echo "[dash-loop] nova versao valida detectada ($NEW_HASH != $CUR_HASH), atualizando..."
-        mv "/mnt/us/dash-loop.sh.new" "/mnt/us/dash-loop.sh"
-        chmod 755 "/mnt/us/dash-loop.sh"
-        exec /bin/sh "/mnt/us/dash-loop.sh"
+        mv "$SELF.new" "$SELF"
+        chmod 755 "$SELF"
+        exec /bin/sh "$SELF"
       else
         echo "[dash-loop] erro de sintaxe na nova versao baixada, abortando atualizacao"
       fi
     fi
   fi
-  rm -f "/mnt/us/dash-loop.sh.new" 2>/dev/null
+  rm -f "$SELF.new" 2>/dev/null
 }
 
 rm -f "$STOP"
@@ -209,7 +286,7 @@ while [ ! -f "$STOP" ]; do
   BATT=$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null || echo "")
   CHG=$(lipc-get-prop com.lab126.powerd isCharging 2>/dev/null || echo "0")
   REQ_URL="${PC}?bat=${BATT}&chg=${CHG}"
-  HDR_FILE=/mnt/us/dash.headers
+  HDR_FILE="$DASH_DIR/dash.headers"
 
   SERVER_NIGHT=""
   SERVER_SLEEP=""
@@ -264,9 +341,9 @@ while [ ! -f "$STOP" ]; do
   else
     # Se falhou repetidamente (ex: Mac suspenso), dorme mais tempo para nao torrar bateria
     if [ "$failures" -ge 3 ]; then
-      sleep 120
+      nap 120
     else
-      sleep "$INTERVAL"
+      nap "$INTERVAL"
     fi
   fi
 done

@@ -11,6 +11,40 @@ export function Icon({ name }: { name: IconName }): React.JSX.Element {
   }
 
   switch (name) {
+    case 'wifi':
+      return (
+        <svg {...common} aria-hidden="true">
+          <path d="M2.5 8.8a14 14 0 0 1 19 0" />
+          <path d="M5.8 12.3a9.2 9.2 0 0 1 12.4 0" />
+          <path d="M9.1 15.8a4.4 4.4 0 0 1 5.8 0" />
+          <circle cx="12" cy="19" r="0.9" fill="currentColor" />
+        </svg>
+      )
+    case 'palette':
+      return (
+        <svg {...common} aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.8-1.2-3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.4 17 3 12 3Z" />
+          <circle cx="7.5" cy="11" r="1.1" />
+          <circle cx="10" cy="7" r="1.1" />
+          <circle cx="15" cy="7.2" r="1.1" />
+        </svg>
+      )
+    case 'plug':
+      return (
+        <svg {...common} aria-hidden="true">
+          <path d="M9 2v5" />
+          <path d="M15 2v5" />
+          <path d="M6 7h12v4a6 6 0 0 1-12 0Z" />
+          <path d="M12 17v5" />
+        </svg>
+      )
+    case 'arrow-left':
+      return (
+        <svg {...common} aria-hidden="true">
+          <path d="M19 12H5" />
+          <path d="m11 6-6 6 6 6" />
+        </svg>
+      )
     case 'book':
       return (
         <svg {...common} aria-hidden="true">

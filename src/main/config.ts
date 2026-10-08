@@ -1,10 +1,10 @@
 import { promises as fs } from 'node:fs'
 import { dirname } from 'node:path'
 import { app, safeStorage } from 'electron'
-import type { DashboardConfig, KindleDevice, LanguagePreference } from '../shared/types'
+import { THEME_IDS, type DashboardConfig, type KindleDevice, type LanguagePreference, type ThemePreference } from '../shared/types'
 import { positiveInt } from './constants'
 import { applyLanguagePreference, normalizeLanguagePreference, text } from './i18n'
-import { configPath, defaultDashboardUrl } from './paths'
+import { configPath, defaultDashboardUrl, healedDashboardUrl } from './paths'
 
 export interface StoredDashboardConfig {
   dashboardTitle?: string
@@ -22,8 +22,16 @@ export interface StoredDashboardConfig {
   pictureInPicture: boolean
   pictureInPictureScale: number
   setupComplete: boolean
+  theme: ThemePreference
   kindleDevices?: KindleDevice[]
   activeKindleId?: string
+}
+
+const DEFAULT_THEME: ThemePreference = 'midnight'
+
+export function normalizeTheme(raw: unknown): ThemePreference {
+  if (raw === 'system') return 'system'
+  return (THEME_IDS as readonly unknown[]).includes(raw) ? (raw as ThemePreference) : DEFAULT_THEME
 }
 
 // Multiplicadores de tamanho oferecidos na UI para a janela PiP.
@@ -66,6 +74,7 @@ function defaultStoredConfig(): StoredDashboardConfig {
     pictureInPicture: false,
     pictureInPictureScale: DEFAULT_PIP_SCALE,
     setupComplete: true,
+    theme: DEFAULT_THEME,
     kindleDevices: defaultDevices,
     activeKindleId: 'kindle-1',
   }
@@ -78,7 +87,7 @@ export function decryptPassword(config: StoredDashboardConfig): string {
   return config.kindlePasswordPlain ?? ''
 }
 
-function encryptedPasswordFields(password: string): Partial<StoredDashboardConfig> {
+export function encryptedPasswordFields(password: string): Partial<StoredDashboardConfig> {
   if (safeStorage.isEncryptionAvailable()) {
     return {
       kindlePasswordEncrypted: safeStorage.encryptString(password).toString('base64'),
@@ -113,6 +122,7 @@ export function publicConfig(config: StoredDashboardConfig): DashboardConfig {
     pictureInPicture: config.pictureInPicture,
     pictureInPictureScale: config.pictureInPictureScale,
     setupComplete: config.setupComplete,
+    theme: config.theme,
     kindleDevices: config.kindleDevices,
     activeKindleId: config.activeKindleId,
   }
@@ -161,6 +171,7 @@ export async function loadConfig(): Promise<StoredDashboardConfig> {
       pictureInPicture: raw.pictureInPicture === true,
       pictureInPictureScale: normalizePipScale(raw.pictureInPictureScale),
       setupComplete: true,
+      theme: normalizeTheme(raw.theme),
       kindleDevices,
       activeKindleId,
     }
@@ -311,4 +322,24 @@ export async function setPictureInPictureScale(scale: unknown): Promise<Dashboar
   }
   await writeConfig(next)
   return publicConfig(next)
+}
+
+export async function setTheme(raw: unknown): Promise<DashboardConfig> {
+  const previous = await loadConfig()
+  const next: StoredDashboardConfig = {
+    ...previous,
+    theme: normalizeTheme(raw),
+  }
+  await writeConfig(next)
+  return publicConfig(next)
+}
+
+// Keep the dashboard URL pointing at this machine after its LAN IP changes.
+// Returns the new URL when it was corrected, otherwise null.
+export async function refreshDashboardHost(): Promise<string | null> {
+  const previous = await loadConfig()
+  const healed = healedDashboardUrl(previous.dashboardUrl, previous.kindleIp)
+  if (!healed || healed === previous.dashboardUrl) return null
+  await writeConfig({ ...previous, dashboardUrl: healed })
+  return healed
 }

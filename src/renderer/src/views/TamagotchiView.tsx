@@ -423,7 +423,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                         display: 'grid',
                         placeItems: 'center',
                         borderRadius: '6px',
-                        background: 'rgba(255,255,255,0.05)',
+                        background: 'var(--bg-subtle)',
                       }}
                     >
                       {char.icon}
@@ -432,7 +432,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                       <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {char.name}
                         {isSelected && (
-                          <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'var(--accent, #2196f3)', color: '#fff' }}>
+                          <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'var(--accent, #2196f3)', color: 'var(--on-accent)' }}>
                             Ativo
                           </span>
                         )}
@@ -829,7 +829,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                   justifyContent: 'center',
                   padding: '8px 4px',
                   background: activeExpression === 'feed' ? 'var(--accent, #2196f3)' : 'var(--bg)',
-                  color: activeExpression === 'feed' ? '#fff' : 'var(--text)',
+                  color: activeExpression === 'feed' ? 'var(--on-accent)' : 'var(--text)',
                   border: '1px solid var(--line)',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -852,7 +852,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                   justifyContent: 'center',
                   padding: '8px 4px',
                   background: activeExpression === 'play' ? 'var(--accent, #2196f3)' : 'var(--bg)',
-                  color: activeExpression === 'play' ? '#fff' : 'var(--text)',
+                  color: activeExpression === 'play' ? 'var(--on-accent)' : 'var(--text)',
                   border: '1px solid var(--line)',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -875,7 +875,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                   justifyContent: 'center',
                   padding: '8px 4px',
                   background: activeExpression === 'bath' ? 'var(--accent, #2196f3)' : 'var(--bg)',
-                  color: activeExpression === 'bath' ? '#fff' : 'var(--text)',
+                  color: activeExpression === 'bath' ? 'var(--on-accent)' : 'var(--text)',
                   border: '1px solid var(--line)',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -898,7 +898,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                   justifyContent: 'center',
                   padding: '8px 4px',
                   background: activeExpression === 'pet' ? 'var(--accent, #2196f3)' : 'var(--bg)',
-                  color: activeExpression === 'pet' ? '#fff' : 'var(--text)',
+                  color: activeExpression === 'pet' ? 'var(--on-accent)' : 'var(--text)',
                   border: '1px solid var(--line)',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -917,7 +917,7 @@ export function TamagotchiView({ t: _t, onSaved, onError }: TamagotchiViewProps)
                 marginTop: '14px',
                 padding: '8px 10px',
                 borderRadius: '6px',
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--bg-subtle)',
                 border: '1px solid var(--line)',
                 fontSize: '10px',
                 color: 'var(--text-dim)',

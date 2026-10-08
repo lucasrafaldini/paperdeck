@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { LANGUAGES, languageName, type Translator } from '../i18n'
-import type { LanguagePreference, SupportedLanguage } from '../../../shared/types'
+import { THEME_OPTIONS } from '../theme'
+import type { LanguagePreference, SupportedLanguage, ThemePreference } from '../../../shared/types'
 
 const PIP_SCALE_OPTIONS = [1, 1.25, 1.5, 1.75, 2]
 
@@ -10,6 +11,7 @@ interface SettingsViewProps {
   languagePreference: LanguagePreference
   onChangeDashboardTitle: (title: string) => void
   onChangeLanguage: (language: LanguagePreference) => void
+  onChangeTheme: (theme: ThemePreference) => void
   onChangePictureInPictureScale: (scale: number) => void
   onTogglePictureInPicture: (enabled: boolean) => void
   pictureInPicture: boolean
@@ -20,6 +22,7 @@ interface SettingsViewProps {
   savingTitle?: boolean
   systemLanguage: SupportedLanguage | undefined
   t: Translator
+  themePreference: ThemePreference
 }
 
 export function SettingsView({
@@ -28,6 +31,7 @@ export function SettingsView({
   languagePreference,
   onChangeDashboardTitle,
   onChangeLanguage,
+  onChangeTheme,
   onChangePictureInPictureScale,
   onTogglePictureInPicture,
   pictureInPicture,
@@ -38,6 +42,7 @@ export function SettingsView({
   savingTitle,
   systemLanguage,
   t,
+  themePreference,
 }: SettingsViewProps): React.JSX.Element {
   const [titleInput, setTitleInput] = useState(dashboardTitle || '')
 
@@ -47,6 +52,51 @@ export function SettingsView({
 
   return (
     <section className="single-grid settings-stack">
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">{t('themeSectionEyebrow')}</p>
+            <h2>{t('themeSectionTitle')}</h2>
+            <p className="field-note">{t('themeSectionSub')}</p>
+          </div>
+        </div>
+
+        <div className="theme-grid" role="radiogroup" aria-label={t('themeSectionTitle')}>
+          {THEME_OPTIONS.map((option) => {
+            const selected = option.id === themePreference
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className={`theme-card ${selected ? 'selected' : ''}`}
+                onClick={() => onChangeTheme(option.id)}
+                disabled={disabled}
+              >
+                <span className="theme-preview" style={{ background: option.swatch.bg }} aria-hidden="true">
+                  <span className="theme-preview-side" style={{ background: option.swatch.surface }} />
+                  <span className="theme-preview-body">
+                    <span className="theme-preview-line" style={{ background: option.swatch.text }} />
+                    <span className="theme-preview-line short" style={{ background: option.swatch.text }} />
+                    <span className="theme-preview-card" style={{ background: option.swatch.surface }}>
+                      <span className="theme-preview-dot" style={{ background: option.swatch.accent }} />
+                    </span>
+                  </span>
+                </span>
+                <span className="theme-card-text">
+                  <span className="theme-card-name">
+                    {t(option.nameKey)}
+                    {selected ? <span className="theme-card-check">{t('themeActive')}</span> : null}
+                  </span>
+                  <span className="theme-card-desc">{t(option.descKey)}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
       <section className="panel">
         <div className="panel-heading">
           <div>
