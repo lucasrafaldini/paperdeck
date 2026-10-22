@@ -20,7 +20,7 @@ const WIDGET_DESCRIPTIONS: Record<string, { desc: string; icon: string }> = {
     icon: '🧠',
   },
   macstats: {
-    desc: 'Métricas de hardware do macOS (Uso de CPU, Memória RAM, Disco e Uptime).',
+    desc: 'Espaço de todos os discos conectados, temperatura média do chip/SSD e uptime do Mac.',
     icon: '💻',
   },
   tamagotchi: {
@@ -69,9 +69,8 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'historyChart', label: 'Gráfico histórico de atividade (7 dias)', default: false },
   ],
   macstats: [
-    { id: 'cpuBar', label: 'Uso de CPU (%) com barra gráfica', default: true },
-    { id: 'ramBar', label: 'Uso de Memória RAM (GB e %)', default: true },
-    { id: 'diskBar', label: 'Espaço em disco raiz (/)', default: true },
+    { id: 'disks', label: 'Espaço de todos os discos conectados (interno e externos)', default: true },
+    { id: 'temperature', label: 'Temperatura média do chip e do SSD', default: true },
     { id: 'uptime', label: 'Tempo de atividade (Uptime)', default: true },
     { id: 'sysInfo', label: 'Modelo do Mac e versão do macOS', default: true },
   ],

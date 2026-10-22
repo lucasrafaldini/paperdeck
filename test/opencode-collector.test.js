@@ -29,3 +29,21 @@ test('opencode collector returns valid payload when database exists', async () =
   assert.equal(data.historyPoints.length, 7);
   assert.ok(Array.isArray(data.topModels));
 });
+
+test('findOpencodeProcess only matches the OpenCode executable, not paths in other commands', () => {
+  const { findOpencodeProcess } = require('../backend/collectors/opencode');
+  // Shells, editors or this repo's collector file mention "opencode" but are not it.
+  const unrelated = [
+    '/bin/zsh /bin/zsh -c grep opencode backend/collectors/opencode.js',
+    'cat cat /Users/me/.local/share/opencode/opencode',
+    '/Applications/Code.app/Contents/MacOS/Electron /Applications/Code.app/Contents/MacOS/Electron --file opencode.json',
+  ].join('\n');
+  assert.deepEqual(findOpencodeProcess(unrelated), { running: false, model: null });
+
+  assert.deepEqual(
+    findOpencodeProcess('/opt/homebrew/bin/opencode /opt/homebrew/bin/opencode --model ollama/qwen3'),
+    { running: true, model: 'ollama/qwen3' },
+  );
+  assert.equal(findOpencodeProcess('node node /usr/local/lib/node_modules/opencode-ai/bin/opencode').running, true);
+  assert.equal(findOpencodeProcess('').running, false);
+});

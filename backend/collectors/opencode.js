@@ -11,16 +11,31 @@ const CACHE_TTL_MS = 15000; // 15s cache
 
 let cache = { at: 0, data: null };
 
-function checkProcessRunning() {
-  try {
-    const ps = execSync('ps aux | grep "[o]pencode"', { encoding: 'utf8', timeout: 800 });
-    const lines = ps.trim().split('\n').filter(Boolean);
-    if (lines.length > 0) {
-      const matchModel = lines[0].match(/--model\s+([^\s]+)/);
+// Finds a running OpenCode process from `ps -axo comm=,args=` output. Only the
+// executable name counts: matching "opencode" anywhere in the command line also
+// caught editors, shells or this very collector's file path.
+function findOpencodeProcess(psOutput) {
+  for (const line of String(psOutput || '').split('\n')) {
+    const tokens = line.trim().split(/\s+/);
+    if (!tokens[0]) continue;
+    // comm is the executable; under a JS runtime (`node .../bin/opencode`) the
+    // script is argv[1].
+    const exe = path.basename(tokens[0]);
+    const script = /^(node|bun|deno)$/.test(exe) && tokens[2] ? path.basename(tokens[2]) : '';
+    if ([exe, script].some((name) => name === 'opencode' || name === '.opencode')) {
+      const matchModel = line.match(/--model\s+(\S+)/);
       return { running: true, model: matchModel ? matchModel[1] : null };
     }
-  } catch {}
+  }
   return { running: false, model: null };
+}
+
+function checkProcessRunning() {
+  try {
+    return findOpencodeProcess(execSync('ps -axo comm=,args=', { encoding: 'utf8', timeout: 800 }));
+  } catch {
+    return { running: false, model: null };
+  }
 }
 
 function readLocalConfig() {
@@ -199,6 +214,7 @@ async function collect(customDbPath) {
 }
 
 module.exports = {
+  findOpencodeProcess,
   collect,
   querySql,
   OPENCODE_DB,

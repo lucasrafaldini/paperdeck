@@ -308,6 +308,12 @@
     "sessions": "sessions",
     "goLimits": "Go plan limits without API",
     "claudeStale": "Claude limits outdated",
-    "codexStale": "local limits outdated (Codex used outside the CLI)"
+    "codexStale": "local limits outdated (Codex used outside the CLI)",
+    "disksNone": "No disks found",
+    "tempChip": "Chip",
+    "tempMax": "max",
+    "tempSsd": "SSD",
+    "uptime": "Uptime",
+    "diskFree": "free"
   }
 }

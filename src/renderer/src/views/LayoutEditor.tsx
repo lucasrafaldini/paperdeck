@@ -15,7 +15,7 @@ interface LayoutEditorProps {
 const WIDGET_META: Record<string, { name: string; icon: string; desc: string }> = {
   claude: { name: 'Claude', icon: '🤖', desc: 'Uso 5h e 7d' },
   antigravity: { name: 'Antigravity AI', icon: '🧠', desc: 'Cota 5h/7d e Brain' },
-  macstats: { name: 'Mac Stats', icon: '💻', desc: 'CPU, RAM, Disco e Uptime' },
+  macstats: { name: 'Mac Stats', icon: '💻', desc: 'Discos conectados, temperatura e uptime' },
   tamagotchi: { name: 'Mascote (Tamagotchi)', icon: '🐱', desc: 'Bichinho virtual para cuidar' },
   sitescraper: { name: 'Monitor de Sites', icon: '🌐', desc: 'Últimos conteúdos e posts' },
   omnirouter: { name: 'Omni Router', icon: '🌐', desc: 'Tokens, custo e modelos' },
@@ -41,9 +41,8 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
     { id: 'historyChart', label: 'Gráfico histórico 7d', default: false },
   ],
   macstats: [
-    { id: 'cpuBar', label: 'Barra de CPU (%)', default: true },
-    { id: 'ramBar', label: 'Barra de RAM (GB e %)', default: true },
-    { id: 'diskBar', label: 'Barra de espaço em disco (/)', default: true },
+    { id: 'disks', label: 'Espaço de todos os discos conectados', default: true },
+    { id: 'temperature', label: 'Temperatura média do chip e do SSD', default: true },
     { id: 'uptime', label: 'Tempo de atividade (Uptime)', default: true },
     { id: 'sysInfo', label: 'Modelo Mac e sistema', default: true },
   ],
@@ -485,8 +484,8 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                     )}
                     {block.tool === 'macstats' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div>CPU: 14% · RAM: 13.1 / 16.0 GB (81%)</div>
-                        <div>Disco: 39% usado · Uptime: 18h 22m</div>
+                        <div>Macintosh HD: 222 / 245 GB (91%) · Externo: 378 / 500 GB (76%)</div>
+                        <div>Chip 60°C · SSD 49°C · Uptime: 18h 22m</div>
                       </div>
                     )}
                     {block.tool === 'applemusic' && (
