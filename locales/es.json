@@ -194,6 +194,12 @@
     "sessions": "sesiones",
     "goLimits": "limites del plan Go sin API",
     "claudeStale": "limites de Claude desactualizados",
-    "codexStale": "límites locales desactualizados (Codex usado fuera del CLI)"
+    "codexStale": "límites locales desactualizados (Codex usado fuera del CLI)",
+    "disksNone": "No se encontraron discos",
+    "tempChip": "Chip",
+    "tempMax": "máx",
+    "tempSsd": "SSD",
+    "uptime": "Encendido hace",
+    "diskFree": "libres"
   }
 }

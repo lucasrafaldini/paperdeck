@@ -23,6 +23,11 @@ asar: true
 mac:
   target:
     - target: default
+  # Native helpers (built by `npm run build:native`) must live outside app.asar
+  # to be executable; the Mac Stats collector looks in Resources/bin.
+  extraResources:
+    - from: build/bin
+      to: bin
   icon: build/icon.png
   category: public.app-category.developer-tools
   darkModeSupport: true

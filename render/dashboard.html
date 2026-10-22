@@ -75,6 +75,23 @@
   html.kt3 .stat-box { border: 2px solid #000; padding: 6px 8px; text-align: center; }
   html.kt3 .stat-val { font-size: 18px; font-weight: bold; }
   html.kt3 .stat-lbl { font-size: 11px; opacity: 0.8; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
+  /* Cards are size containers so stat grids adapt to any column width. */
+  html.kt3 .card { container-type: inline-size; }
+  html.kt3 .stat-val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html.kt3 .stat-lbl { overflow-wrap: anywhere; }
+  @container (max-width: 300px) {
+    html.kt3 .stat-grid,
+    html.kt3 .col-stacked .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  }
+  html.kt3 .card-meta { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; }
+  html.kt3 .card-meta-name { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  html.kt3 .card-meta-status { flex: 0 0 auto; font-size: 12px; font-weight: bold; white-space: nowrap; }
+  html.kt3 .disk-row { margin: 3px 0; }
+  html.kt3 .disk-row .label { font-size: 13px; margin-bottom: 1px; }
+  html.kt3 .disk-row .bar { height: 11px; border-width: 2px; }
+  html.kt3 .disk-meta { font-size: 12px; margin-top: 1px; }
+  html.kt3 .mac-meta { font-size: 12px; margin: 0 0 4px; }
+  html.kt3 .mac-foot { font-size: 12px; padding-top: 4px; border-top-width: 1px; }
   html.kt3 .model-list { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
   html.kt3 .model-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 3px 0; border-bottom: 1px dotted #666; }
   html.kt3 .model-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
@@ -146,6 +163,20 @@
   .bar > i { display: block; height: 100%; background: #000; }
   .reset { font-size: 34px; margin-top: 10px; }
 
+  /* Mac Stats: uma linha compacta por disco para caber todos no card. */
+  .disk-row { margin: 10px 0; }
+  .disk-row .label { font-size: 24px; margin-bottom: 4px; gap: 8px; }
+  .disk-row .label span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .disk-row .label span:last-child { flex: 0 0 auto; }
+  .disk-row .bar { height: 20px; }
+  .disk-meta { font-size: 20px; margin-top: 3px; }
+  .mac-meta { font-size: 22px; font-weight: bold; margin: 0 0 8px; }
+  .mac-foot {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px;
+    margin-top: auto; padding-top: 8px; border-top: 2px solid #000;
+    font-size: 22px; font-weight: bold;
+  }
+
   .notify-banner {
     background: #000; color: #fff; padding: 6px 12px; font-size: 15px; font-weight: bold;
     margin-bottom: 10px; border: 2px solid #000; text-align: center;
@@ -205,7 +236,13 @@
       sessions: 'sessions',
       goLimits: 'Go plan limits without API',
       claudeStale: 'Claude limits outdated',
-      codexStale: 'local limits outdated (Codex used outside the CLI)'
+      codexStale: 'local limits outdated (Codex used outside the CLI)',
+      disksNone: 'No disks found',
+      diskFree: 'free',
+      tempChip: 'Chip',
+      tempMax: 'max',
+      tempSsd: 'SSD',
+      uptime: 'Uptime'
     }
   };
 
@@ -237,6 +274,32 @@
       minimumFractionDigits: 0,
       maximumFractionDigits: 1
     }) + '%';
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  // Model ids can be full cache paths, e.g.
+  // "local-mlx//Volumes/X/hf_cache/models--org--Qwen3-27B/snapshots/<sha>/2-bit".
+  // Show "Qwen3-27B · 2-bit" instead of the path (which also leaks local dirs).
+  function modelLabel(raw) {
+    var value = String(raw || '').trim();
+    var hf = value.match(/models--[^/]+?--([^/]+)(?:\/snapshots\/[0-9a-f]+\/?([^/]*))?/i);
+    if (hf) return hf[1] + (hf[2] ? ' · ' + hf[2] : '');
+    var parts = value.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : value;
+  }
+
+  // Bytes decimais, como o Finder: 245 GB, 1,0 TB.
+  function bytes(value) {
+    var n = Number(value) || 0;
+    if (n >= 1e12) {
+      return (n / 1e12).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' TB';
+    }
+    return Math.round(n / 1e9).toLocaleString(locale()) + ' GB';
   }
 
   function money(cents, cur) {
@@ -331,7 +394,7 @@
     }).join('');
     return '<div style="margin:6px 0 10px">' +
            '<div style="font-size:11px;font-weight:bold;margin-bottom:3px">' + (title || 'Histórico 7 dias') + ':</div>' +
-           '<svg width="' + w + '" height="' + (h + 14) + '" viewBox="0 0 ' + w + ' ' + (h + 14) + '">' + bars + '</svg>' +
+           '<svg style="display:block;width:100%;max-width:' + w + 'px;height:auto" viewBox="0 0 ' + w + ' ' + (h + 14) + '">' + bars + '</svg>' +
            '</div>';
   }
 
@@ -353,20 +416,34 @@
 
     if (t.tool === 'macstats') {
       if (opt.sysInfo !== false) {
-        h += '<div class="sub" style="font-size:13px;font-weight:bold;margin:2px 0 6px">' + (t.model || 'Mac') + ' · ' + (t.osRelease || 'macOS') + ' (' + (t.cores || '') + ' cores)</div>';
+        var meta = [t.model, t.chip, t.osRelease].filter(Boolean).join(' · ');
+        h += '<div class="sub mac-meta">' + esc(meta || 'Mac') + '</div>';
       }
-      if (opt.cpuBar !== false) {
-        h += bar('CPU', t.cpuPct || 0);
+      if (opt.disks !== false) {
+        var disks = t.disks || [];
+        if (!disks.length) h += '<div class="sub dim">' + copy('disksNone') + '</div>';
+        disks.forEach(function (d) {
+          var pct = Math.max(0, Math.min(100, Number(d.pct) || 0));
+          h += '<div class="row disk-row"><div class="label"><span>' + esc(d.name) + '</span><span>' +
+               percent(pct) + '</span></div>' +
+               '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+               '<div class="disk-meta">' + bytes(d.usedBytes) + ' / ' + bytes(d.totalBytes) + ' · ' +
+               bytes(d.freeBytes) + ' ' + copy('diskFree') + '</div></div>';
+        });
       }
-      if (opt.ramBar !== false) {
-        h += bar('RAM (' + (t.memUsedGb || 0) + ' / ' + (t.memTotalGb || 0) + ' GB)', t.memPct || 0);
+      var foot = [];
+      var temp = t.temperature;
+      if (opt.temperature !== false && temp) {
+        var parts = [];
+        if (temp.socAvgC != null) {
+          parts.push(copy('tempChip') + ' ' + temp.socAvgC + '°C' +
+                     (temp.socMaxC != null ? ' (' + copy('tempMax') + ' ' + temp.socMaxC + '°C)' : ''));
+        }
+        if (temp.ssdC != null) parts.push(copy('tempSsd') + ' ' + temp.ssdC + '°C');
+        if (parts.length) foot.push('<span>' + parts.join(' · ') + '</span>');
       }
-      if (opt.diskBar !== false) {
-        h += bar('Disco (' + (t.diskUsedGb || 0) + ' / ' + (t.diskTotalGb || 0) + ' GB)', t.diskPct || 0);
-      }
-      if (opt.uptime !== false && t.uptime) {
-        h += '<div class="sub" style="font-size:12px;opacity:0.8;margin-top:4px">Uptime: ' + t.uptime + '</div>';
-      }
+      if (opt.uptime !== false && t.uptime) foot.push('<span>' + copy('uptime') + ' ' + esc(t.uptime) + '</span>');
+      if (foot.length) h += '<div class="mac-foot">' + foot.join('') + '</div>';
       return h + '</div>';
     }
 
@@ -480,28 +557,6 @@
       return h + '</div>';
     }
 
-    if (t.tool === 'macstats') {
-      if (opt.cpuBar !== false) {
-        h += '<div class="row"><div class="label"><span>CPU</span><span>' + (t.cpuPct || 0) + '%</span></div>' +
-             '<div class="bar"><i style="width:' + (t.cpuPct || 0) + '%"></i></div></div>';
-      }
-      if (opt.ramBar !== false) {
-        h += '<div class="row"><div class="label"><span>RAM (' + (t.memUsedGb || 0) + ' / ' + (t.memTotalGb || 0) + ' GB)</span><span>' + (t.memPct || 0) + '%</span></div>' +
-             '<div class="bar"><i style="width:' + (t.memPct || 0) + '%"></i></div></div>';
-      }
-      if (opt.diskBar !== false && t.diskTotalGb) {
-        h += '<div class="row"><div class="label"><span>Disco / (' + (t.diskUsedGb || 0) + ' / ' + (t.diskTotalGb || 0) + ' GB)</span><span>' + (t.diskPct || 0) + '%</span></div>' +
-             '<div class="bar"><i style="width:' + (t.diskPct || 0) + '%"></i></div></div>';
-      }
-      if (opt.sysInfo !== false || opt.uptime !== false) {
-        h += '<div class="stat-grid" style="margin-top:6px">' +
-             (opt.uptime !== false ? '<div class="stat-box"><div class="stat-val">' + (t.uptime || '-') + '</div><div class="stat-lbl">Uptime</div></div>' : '') +
-             (opt.sysInfo !== false ? '<div class="stat-box"><div class="stat-val" style="font-size:12px">' + (t.model || 'Mac') + '</div><div class="stat-lbl">' + (t.osRelease || 'macOS') + '</div></div>' : '') +
-             '</div>';
-      }
-      return h + '</div>';
-    }
-
     if (t.tool === 'tamagotchi') {
       var moodIcon = t.mood === 'happy' ? '✨' : (t.mood === 'hungry' ? '🍲' : (t.mood === 'sleeping' ? '💤' : (t.mood === 'tired' ? '🥱' : (t.mood === 'dirty' ? '🧼' : '🐾'))));
       h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 6px">' +
@@ -542,11 +597,11 @@
 
     if (t.tool === 'opencode') {
       var statusBadge = t.status === 'Ativo' ? '● Ativo' : '○ Ocioso';
-      var modelName = t.model || 'Ollama Local';
+      var modelName = modelLabel(t.model) || 'Ollama Local';
       if (opt.modelInfo !== false) {
-        h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 6px">' +
-             '<span style="font-size:13px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px">🤖 ' + modelName + '</span>' +
-             '<span style="font-size:12px;opacity:0.8">' + statusBadge + '</span>' +
+        h += '<div class="card-meta">' +
+             '<span class="card-meta-name">' + esc(modelName) + '</span>' +
+             '<span class="card-meta-status">' + statusBadge + '</span>' +
              '</div>';
       }
 
@@ -568,7 +623,7 @@
 
       if (opt.activeSession !== false && t.activeSession) {
         h += '<div style="margin:4px 0 6px;padding:4px 8px;border:1.5px solid #000;border-radius:5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-             '<strong>Última Sessão:</strong> ' + t.activeSession + '</div>';
+             '<strong>Última Sessão:</strong> ' + esc(t.activeSession) + '</div>';
       }
 
       if (opt.historyChart !== false && Array.isArray(t.historyPoints)) {

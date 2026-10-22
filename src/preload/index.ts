@@ -4,13 +4,18 @@ import type {
   CustomSite,
   DashboardApi,
   DashboardConfigInput,
+  KindleConnectionTarget,
   LanguagePreference,
   RenderResult,
+  ThemePreference,
 } from '../shared/types'
 
 const api: DashboardApi = {
   checkAuth: () => ipcRenderer.invoke('auth:check'),
   checkKindle: () => ipcRenderer.invoke('kindle:check'),
+  scanKindles: () => ipcRenderer.invoke('kindle:scan'),
+  connectKindle: (target: KindleConnectionTarget) => ipcRenderer.invoke('kindle:connect', target),
+  setTheme: (theme: ThemePreference) => ipcRenderer.invoke('config:set-theme', theme),
   getKindleScriptStatus: () => ipcRenderer.invoke('kindle:script-status'),
   getRuntimeInfo: () => ipcRenderer.invoke('runtime:get'),
   getConfig: () => ipcRenderer.invoke('config:get'),

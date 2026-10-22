@@ -3,16 +3,23 @@ const { test } = require('node:test');
 const macstats = require('../backend/collectors/macstats');
 const { createServer } = require('../backend/server');
 
-test('macstats collector returns valid macOS metrics', async () => {
+test('macstats collector returns disks, temperature and system info', async () => {
   const data = await macstats.collect();
   assert.equal(data.tool, 'macstats');
   assert.equal(data.label, 'Mac Stats');
-  assert.equal(typeof data.cpuPct, 'number');
-  assert.ok(data.cpuPct >= 0 && data.cpuPct <= 100);
-  assert.equal(typeof data.memPct, 'number');
-  assert.ok(data.memPct >= 0 && data.memPct <= 100);
-  assert.equal(typeof data.diskPct, 'number');
-  assert.ok(data.diskPct >= 0 && data.diskPct <= 100);
+  assert.ok(Array.isArray(data.disks));
+  for (const disk of data.disks) {
+    assert.equal(typeof disk.name, 'string');
+    assert.ok(disk.totalBytes > 0);
+    assert.ok(disk.usedBytes >= 0 && disk.usedBytes <= disk.totalBytes);
+    assert.ok(disk.pct >= 0 && disk.pct <= 100);
+  }
+  if (process.platform === 'darwin') {
+    assert.ok(data.disks.some((disk) => disk.mount === '/'), 'the startup disk is listed');
+  }
+  // Temperature is optional (needs the native helper and sensors).
+  assert.ok(data.temperature === null || typeof data.temperature === 'object');
+  assert.equal(data.cpuPct, undefined);
   assert.ok(data.uptime);
 });
 

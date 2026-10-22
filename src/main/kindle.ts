@@ -1,4 +1,7 @@
 import type {
+  KindleConnectResult,
+  KindleConnectionTarget,
+  KindleDevice,
   KindleInstallResult,
   KindleScriptStatus,
   KindleStatus,
@@ -12,6 +15,7 @@ import {
 import {
   type StoredDashboardConfig,
   decryptPassword,
+  encryptedPasswordFields,
   loadConfig,
   publicConfig,
   writeConfig,
@@ -51,13 +55,26 @@ function boolField(fields: Record<string, string>, key: string): boolean {
   return fields[key] === 'yes'
 }
 
-export async function checkKindle(): Promise<KindleStatus> {
+// Translate raw ssh2/socket errors into something a person can act on.
+export function friendlySshError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  const code = (error as NodeJS.ErrnoException | null)?.code ?? ''
+  const lower = raw.toLowerCase()
+  if (lower.includes('authentication') || lower.includes('auth fail')) return text('sshAuthFailed')
+  if (lower.includes('kindle_pw or ssh key')) return text('sshNoCredentials')
+  if (code === 'ECONNREFUSED' || lower.includes('econnrefused')) return text('sshRefused')
+  if (code === 'EHOSTUNREACH' || code === 'ENETUNREACH' || lower.includes('unreach')) return text('sshUnreachable')
+  if (code === 'ETIMEDOUT' || lower.includes('timed out') || lower.includes('timeout')) return text('sshTimeout')
+  if (lower.includes('kindle_ip is required')) return text('sshNoHost')
+  return raw
+}
+
+async function probeKindle(options: SshOptions): Promise<KindleStatus> {
   const checkedAt = new Date().toISOString()
-  const config = await loadConfig()
   let client: SshClient | null = null
 
   try {
-    client = await ksshModule().connect(sshOptions(config))
+    client = await ksshModule().connect(options)
     const result = await ksshModule().execCommand(client, `
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 export PATH
@@ -113,7 +130,7 @@ echo "hotfix=$(yn test -f /etc/upstart/kmc.conf)"
       canInstall: false,
       checkedAt,
       connected: false,
-      detail: text('verifyFail', { message: error instanceof Error ? error.message : String(error) }),
+      detail: text('verifyFail', { message: friendlySshError(error) }),
       fbink: false,
       hotfix: false,
       initctl: false,
@@ -125,6 +142,58 @@ echo "hotfix=$(yn test -f /etc/upstart/kmc.conf)"
   } finally {
     client?.end()
   }
+}
+
+export async function checkKindle(): Promise<KindleStatus> {
+  return probeKindle(sshOptions(await loadConfig()))
+}
+
+// Test SSH against an arbitrary target and, only when it answers, save it as
+// the active Kindle (adding it to the device list or updating the match).
+export async function connectKindle(target: KindleConnectionTarget): Promise<KindleConnectResult> {
+  const config = await loadConfig()
+  const ip = String(target.ip || '').trim()
+  const port = Number.isInteger(target.port) && target.port > 0 && target.port <= 65535 ? target.port : 22
+  const user = String(target.user || '').trim() || 'root'
+  const typedPassword = typeof target.password === 'string' ? target.password : ''
+  const savedPassword = ip === config.kindleIp ? decryptPassword(config) : ''
+  const password = typedPassword || savedPassword
+
+  const status = await probeKindle({
+    host: ip,
+    password: password || undefined,
+    port,
+    readyTimeout: 8000,
+    retries: 2,
+    username: user,
+  })
+  if (!status.connected) return { status, config: null }
+
+  const devices = (config.kindleDevices ?? []).filter((device) => device.ip)
+  const existing = devices.find((device) => device.ip === ip)
+  const device: KindleDevice = {
+    ...(existing ?? {}),
+    id: existing?.id ?? `k_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    name: target.name?.trim() || existing?.name || 'Kindle',
+    ip,
+    port,
+    user,
+  }
+  const kindleDevices = existing
+    ? devices.map((item) => (item.id === device.id ? device : item))
+    : [...devices, device]
+
+  const next = {
+    ...config,
+    kindleDevices,
+    activeKindleId: device.id,
+    kindleIp: ip,
+    kindlePort: port,
+    kindleUser: user,
+    ...(typedPassword ? encryptedPasswordFields(typedPassword) : {}),
+  }
+  await writeConfig(next)
+  return { status, config: publicConfig(next) }
 }
 
 export async function installKindle(): Promise<KindleInstallResult> {

@@ -8,3 +8,4 @@ release/
 !.env.example
 *.log
 *.pid
+build/bin/

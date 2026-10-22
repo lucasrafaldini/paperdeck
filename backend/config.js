@@ -37,9 +37,8 @@ const DEFAULT_WIDGET_OPTIONS = {
     historyChart: false,
   },
   macstats: {
-    cpuBar: true,
-    ramBar: true,
-    diskBar: true,
+    disks: true,
+    temperature: true,
     uptime: true,
     sysInfo: true,
   },
