@@ -1,6 +1,6 @@
 {
   "name": "paperdeck",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Lucas Rafaldini",
   "license": "MIT",
   "homepage": "https://github.com/lucasrafaldini/paperdeck#readme",
@@ -29,11 +29,12 @@
     "node": ">=24"
   },
   "scripts": {
-    "start": "node scripts/electron-vite.js dev",
-    "dev": "node scripts/electron-vite.js dev",
+    "start": "node scripts/build-native.js && node scripts/electron-vite.js dev",
+    "dev": "node scripts/build-native.js && node scripts/electron-vite.js dev",
     "build": "npm run typecheck && node scripts/electron-vite.js build",
     "preview": "node scripts/electron-vite.js preview",
-    "build:mac": "npm run build && electron-builder --mac --dir",
+    "build:native": "node scripts/build-native.js",
+    "build:mac": "npm run build:native && npm run build && electron-builder --mac --dir",
     "build:win": "npm run build && electron-builder --win",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",

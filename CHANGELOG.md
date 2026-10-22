@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented here.
 
+## [v2.1.0](https://github.com/lucasrafaldini/paperdeck/releases/tag/v2.1.0) - 2026-10-21
+
+PaperDeck v2.1.0 — themes, a Kindle connect wizard and a reliable dashboard link.
+
+### Added
+- Seven control-panel themes (Midnight, Daylight, Glass, Solar, Solar Night, Nord, Paper) plus **System**, with a preview gallery in Settings. The e-ink render stays black and white.
+- **Connect a Kindle** wizard: scans the local network for SSH hosts (Dropbear is flagged as a likely Kindle), tests SSH with the given credentials and only saves the device when the check succeeds.
+- Mac Stats now lists **every connected disk** (internal and external) and shows the average/max chip temperature and the SSD temperature, read without root by a small native helper (`native/paperdeck-temp.c`, built by `npm run build:native`).
+
+### Changed
+- Mac Stats drops the CPU and RAM bars: the Kindle refreshes every few minutes, so instantaneous metrics were meaningless there.
+- OpenCode shows a readable model name (e.g. `Qwen3-27B · 2-bit`) instead of the full model cache path.
+
+### Fixed
+- Mac Stats disk usage was wildly off on APFS (`df /` measures only the sealed system volume); it now reports the whole container in decimal GB/TB, like Finder.
+- The dashboard stopped reaching the Kindle after the computer's IP changed: the app now heals an IP-literal dashboard URL, **Start** rewrites the Kindle's URL, and the Kindle loop scans its whole /24 (with an `ifconfig` fallback for firmwares without `lipc ipAddress`).
+- `dash-loop.sh` ignored `TERM`, so every start stacked another loop on the Kindle; loops now exit cleanly and a new loop replaces the old one.
+- With Claude, Antigravity, OpenCode and Mac Stats together, Antigravity's stats overflowed the card and OpenCode's header wrapped; stat grids now collapse to 2×2 in narrow cards.
+- OpenCode was reported as active whenever any process mentioned "opencode" in its command line; only the OpenCode executable counts now.
+- macOS version in Mac Stats came from the Darwin kernel version.
+
 ## [v2.0.0](https://github.com/lucasrafaldini/paperdeck/releases/tag/v2.0.0) - 2026-09-30
 
 PaperDeck v2.0.0 — The e-ink smart workstation & companion dashboard.
