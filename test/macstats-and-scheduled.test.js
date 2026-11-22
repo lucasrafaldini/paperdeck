@@ -14,6 +14,27 @@ test('macstats collector returns valid macOS metrics', async () => {
   assert.equal(typeof data.diskPct, 'number');
   assert.ok(data.diskPct >= 0 && data.diskPct <= 100);
   assert.ok(data.uptime);
+  assert.ok(data.diskTotalGb === 0 || data.diskUsedGb <= data.diskTotalGb);
+  assert.equal(typeof data.osRelease, 'string');
+  if (process.platform !== 'darwin') assert.doesNotMatch(data.osRelease, /^macOS/);
+});
+
+test('macstats parseDfOutput counts the whole APFS container as used', () => {
+  // Volume de dados do APFS: o container é compartilhado, então usado = total − disponível.
+  const df = [
+    'Filesystem     1024-blocks      Used Available Capacity iused     ifree %iused  Mounted on',
+    '/dev/disk3s5     239362496 191900568  22933236    90% 2153127 229332360    1%   /System/Volumes/Data',
+  ].join('\n');
+  const disk = macstats.parseDfOutput(df);
+  assert.equal(disk.totalGb, 228);
+  assert.equal(disk.freeGb, 22);
+  assert.equal(disk.usedGb, 206);
+  assert.equal(disk.pct, 90);
+
+  assert.deepEqual(macstats.parseDfOutput(''), { totalGb: 0, usedGb: 0, freeGb: 0, pct: 0 });
+  assert.deepEqual(macstats.parseDfOutput('Filesystem 1024-blocks Used Available'), {
+    totalGb: 0, usedGb: 0, freeGb: 0, pct: 0,
+  });
 });
 
 test('scheduled notifications flow (schedule, list, cancel)', async () => {

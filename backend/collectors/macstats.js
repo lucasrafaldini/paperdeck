@@ -1,4 +1,5 @@
 // Coletor de estatísticas do macOS (CPU, RAM, Disco, Uptime)
+const fs = require('fs');
 const os = require('os');
 const { exec } = require('child_process');
 
@@ -20,6 +21,10 @@ function getCpuSnapshot() {
   }
   return { idle, total };
 }
+
+// Amostra inicial no carregamento, para a primeira leitura já ter um delta
+// (antes ela sempre retornava CPU 0%).
+lastCpuSample = getCpuSnapshot();
 
 function computeCpuPct() {
   const current = getCpuSnapshot();
@@ -76,30 +81,56 @@ function getVmStatMemory() {
   });
 }
 
+// No macOS (APFS) o "/" é o snapshot selado do sistema (~10–15 GB); os dados do
+// usuário ficam em /System/Volumes/Data, que divide o mesmo container.
+const MAC_DATA_VOLUME = '/System/Volumes/Data';
+const EMPTY_DISK = { totalGb: 0, usedGb: 0, freeGb: 0, pct: 0 };
+
+function getDiskTarget() {
+  if (process.platform === 'darwin' && fs.existsSync(MAC_DATA_VOLUME)) return MAC_DATA_VOLUME;
+  return '/';
+}
+
+// Interpreta a saída de `df -k <alvo>`. "Usado" = total − disponível, o que
+// contabiliza todos os volumes do container APFS (igual ao Finder/Sobre Este Mac).
+function parseDfOutput(stdout) {
+  const lines = String(stdout || '').trim().split('\n');
+  if (lines.length < 2) return { ...EMPTY_DISK };
+  const parts = lines[lines.length - 1].trim().split(/\s+/);
+  const totalKb = Number.parseInt(parts[1], 10) || 0;
+  const availKb = Number.parseInt(parts[3], 10) || 0;
+  if (totalKb <= 0) return { ...EMPTY_DISK };
+  const usedKb = Math.max(0, totalKb - availKb);
+  return {
+    totalGb: Math.round(totalKb / 1024 / 1024),
+    usedGb: Math.round(usedKb / 1024 / 1024),
+    freeGb: Math.round(availKb / 1024 / 1024),
+    pct: Math.max(0, Math.min(100, Math.round((usedKb / totalKb) * 100))),
+  };
+}
+
 function getDiskUsage() {
   return new Promise((resolve) => {
-    exec('df -k /', { timeout: 1500 }, (err, stdout) => {
+    exec(`df -k "${getDiskTarget()}"`, { timeout: 1500 }, (err, stdout) => {
       if (err || !stdout) {
-        resolve({ totalGb: 0, usedGb: 0, freeGb: 0, pct: 0 });
+        resolve({ ...EMPTY_DISK });
         return;
       }
-      const lines = stdout.trim().split('\n');
-      if (lines.length < 2) {
-        resolve({ totalGb: 0, usedGb: 0, freeGb: 0, pct: 0 });
-        return;
-      }
-      const parts = lines[1].split(/\s+/);
-      const totalKb = Number.parseInt(parts[1], 10) || 0;
-      const usedKb = Number.parseInt(parts[2], 10) || 0;
-      const freeKb = Number.parseInt(parts[3], 10) || 0;
-      const pctStr = parts[4] || '0%';
-      const pct = Number.parseInt(pctStr.replace('%', ''), 10) || 0;
-      resolve({
-        totalGb: Math.round(totalKb / 1024 / 1024),
-        usedGb: Math.round(usedKb / 1024 / 1024),
-        freeGb: Math.round(freeKb / 1024 / 1024),
-        pct,
-      });
+      resolve(parseDfOutput(stdout));
+    });
+  });
+}
+
+function getOsRelease() {
+  return new Promise((resolve) => {
+    if (process.platform !== 'darwin') {
+      resolve(`${os.type()} ${os.release()}`);
+      return;
+    }
+    // os.release() devolve a versão do kernel Darwin, não a do macOS.
+    exec('sw_vers -productVersion', { timeout: 1000 }, (err, stdout) => {
+      const version = !err && stdout ? stdout.trim() : '';
+      resolve(version ? `macOS ${version}` : `Darwin ${os.release()}`);
     });
   });
 }
@@ -132,9 +163,12 @@ async function collect() {
   }
 
   const cpuPct = computeCpuPct();
-  const mem = await getVmStatMemory();
-  const disk = await getDiskUsage();
-  const model = await getMacModel();
+  const [mem, disk, model, osRelease] = await Promise.all([
+    getVmStatMemory(),
+    getDiskUsage(),
+    getMacModel(),
+    getOsRelease(),
+  ]);
   const uptime = formatUptime(os.uptime());
 
   cachedStats = {
@@ -150,11 +184,11 @@ async function collect() {
     diskTotalGb: disk.totalGb,
     uptime,
     model,
-    osRelease: `macOS ${os.release()}`,
+    osRelease,
     cores: os.cpus().length,
   };
   cacheTime = now;
   return cachedStats;
 }
 
-module.exports = { collect };
+module.exports = { collect, parseDfOutput };
