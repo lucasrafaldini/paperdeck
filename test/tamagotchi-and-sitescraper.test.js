@@ -1,10 +1,25 @@
 const assert = require('node:assert/strict');
-const { test } = require('node:test');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { test, after } = require('node:test');
+
+// Estado do pet isolado num diretório temporário (não toca em out/ nem no userData).
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paperdeck-tamagotchi-'));
+process.env.DASHBOARD_DATA_DIR = dataDir;
+after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
+
 const tamagotchi = require('../backend/collectors/tamagotchi');
 const sitescraper = require('../backend/collectors/sitescraper');
 const { createServer } = require('../backend/server');
 
-test('tamagotchi collector returns valid pet state and reacts to actions', async () => {
+test('tamagotchi collector returns valid pet state and reacts to actions', async (t) => {
+  // Entre 23h e 7h o pet dorme à força e `wake` não o acorda; fixa o relógio
+  // ao meio-dia local para o teste não depender da hora em que roda.
+  const noon = new Date();
+  noon.setHours(12, 0, 0, 0);
+  t.mock.timers.enable({ apis: ['Date'], now: noon.getTime() });
+
   const initial = await tamagotchi.collect();
   assert.equal(initial.tool, 'tamagotchi');
   assert.ok(initial.name);
