@@ -15,7 +15,9 @@ interface LayoutEditorProps {
 const WIDGET_META: Record<string, { name: string; icon: string; desc: string }> = {
   claude: { name: 'Claude', icon: '🤖', desc: 'Uso 5h e 7d' },
   antigravity: { name: 'Antigravity AI', icon: '🧠', desc: 'Cota 5h/7d e Brain' },
-  macstats: { name: 'Mac Stats', icon: '💻', desc: 'CPU, RAM, Disco e Uptime' },
+  macstats: { name: 'Sistema', icon: '💻', desc: 'CPU, RAM, temperatura e uptime' },
+  storage: { name: 'Armazenamento', icon: '💾', desc: 'NVMe, SSDs, HDs e pendrives' },
+  network: { name: 'Rede', icon: '📶', desc: 'Download, upload e IP' },
   tamagotchi: { name: 'Mascote (Tamagotchi)', icon: '🐱', desc: 'Bichinho virtual para cuidar' },
   sitescraper: { name: 'Monitor de Sites', icon: '🌐', desc: 'Últimos conteúdos e posts' },
   omnirouter: { name: 'Omni Router', icon: '🌐', desc: 'Tokens, custo e modelos' },
@@ -43,9 +45,21 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
   macstats: [
     { id: 'cpuBar', label: 'Barra de CPU (%)', default: true },
     { id: 'ramBar', label: 'Barra de RAM (GB e %)', default: true },
-    { id: 'diskBar', label: 'Barra de espaço em disco (/)', default: true },
+    { id: 'temperature', label: 'Temperatura CPU/SSD', default: true },
     { id: 'uptime', label: 'Tempo de atividade (Uptime)', default: true },
-    { id: 'sysInfo', label: 'Modelo Mac e sistema', default: true },
+    { id: 'sysInfo', label: 'Modelo e sistema', default: true },
+  ],
+  storage: [
+    { id: 'showType', label: 'Tipo do drive', default: true },
+    { id: 'showFree', label: 'Espaço livre', default: true },
+    { id: 'showSystem', label: 'Incluir disco do sistema', default: true },
+  ],
+  network: [
+    { id: 'showUpload', label: 'Upload', default: true },
+    { id: 'showChart', label: 'Gráfico de download', default: true },
+    { id: 'showPeak', label: 'Pico e média', default: true },
+    { id: 'showInterface', label: 'Interface e IP', default: true },
+    { id: 'showTotals', label: 'Totais desde o boot', default: true },
   ],
   tamagotchi: [
     { id: 'showSprite', label: 'Exibir mascote em pixel art', default: true },
@@ -486,7 +500,19 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
                     {block.tool === 'macstats' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div>CPU: 14% · RAM: 13.1 / 16.0 GB (81%)</div>
-                        <div>Disco: 39% usado · Uptime: 18h 22m</div>
+                        <div>🌡 CPU 58°C · SSD 47°C · Uptime: 18h 22m</div>
+                      </div>
+                    )}
+                    {block.tool === 'storage' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div>NVMe · Macintosh HD: 208 / 228 GB (91%)</div>
+                        <div>SSD · Externo: 205 / 477 GB · HD · Backup: 348 / 466 GB</div>
+                      </div>
+                    )}
+                    {block.tool === 'network' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '15px' }}>↓ 94.2 Mbps</div>
+                        <div>↑ 2.3 Mbps · Ethernet · link 1 Gbps</div>
                       </div>
                     )}
                     {block.tool === 'applemusic' && (
