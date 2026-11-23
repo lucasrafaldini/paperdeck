@@ -98,8 +98,55 @@ const AVAILABLE_WIDGETS = [
   { id: 'codex', name: 'OpenAI Codex' },
 ];
 
+// Canto superior direito do dashboard.
+const DEFAULT_HEADER = {
+  showDate: true,
+  showTime: true,
+  showBattery: true,
+  text: '',
+};
+
+const GRID_COLS = 12;
+const GRID_MAX_ROWS = 6;
+
+function normalizeHeader(header) {
+  const h = header && typeof header === 'object' ? header : {};
+  return {
+    showDate: h.showDate !== false,
+    showTime: h.showTime !== false,
+    showBattery: h.showBattery !== false,
+    text: typeof h.text === 'string' ? h.text.replace(/\s+/g, ' ').trim().slice(0, 40) : '',
+  };
+}
+
+function clampSpan(value, min, max) {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : undefined;
+}
+
+// Mantém só campos conhecidos dos blocos e limita w/h à grade.
+function normalizeLayout(layout) {
+  if (!layout || typeof layout !== 'object') return undefined;
+  const blocks = (Array.isArray(layout.blocks) ? layout.blocks : [])
+    .filter((b) => b && typeof b.tool === 'string' && typeof b.id === 'string')
+    .map((b) => {
+      const out = { id: b.id.slice(0, 80), tool: b.tool.slice(0, 40) };
+      out.width = b.width === 'full' ? 'full' : 'half';
+      out.height = ['compact', 'standard', 'tall'].includes(b.height) ? b.height : 'standard';
+      const w = clampSpan(b.w, 2, GRID_COLS);
+      const h = clampSpan(b.h, 1, GRID_MAX_ROWS);
+      if (w !== undefined) out.w = w;
+      if (h !== undefined) out.h = h;
+      if (b.options && typeof b.options === 'object') out.options = b.options;
+      if (typeof b.siteId === 'string') out.siteId = b.siteId;
+      return out;
+    });
+  return { mode: layout.mode === 'custom' ? 'custom' : 'preset', blocks };
+}
+
 const DEFAULT_CONFIG = {
   dashboardTitle: 'PaperDeck',
+  header: DEFAULT_HEADER,
   activeWidgets: ['claude', 'antigravity', 'omnirouter'],
   availableWidgets: AVAILABLE_WIDGETS,
   widgetOptions: DEFAULT_WIDGET_OPTIONS,
@@ -143,7 +190,8 @@ function readConfig() {
         availableWidgets: AVAILABLE_WIDGETS,
         widgetOptions: mergeWidgetOptions(DEFAULT_WIDGET_OPTIONS, parsed.widgetOptions),
         customSites: Array.isArray(parsed.customSites) ? parsed.customSites : [],
-        layout: parsed.layout || DEFAULT_CONFIG.layout,
+        layout: normalizeLayout(parsed.layout) || DEFAULT_CONFIG.layout,
+        header: normalizeHeader(parsed.header),
         scheduledNotifications: Array.isArray(parsed.scheduledNotifications) ? parsed.scheduledNotifications : [],
       };
     }
@@ -159,6 +207,11 @@ function writeConfig(patch) {
     widgetOptions: mergeWidgetOptions(current.widgetOptions, patch.widgetOptions),
     availableWidgets: AVAILABLE_WIDGETS,
   };
+  if (patch.header !== undefined) next.header = normalizeHeader(patch.header);
+  if (patch.layout !== undefined) next.layout = normalizeLayout(patch.layout) || current.layout;
+  if (typeof patch.dashboardTitle === 'string') {
+    next.dashboardTitle = patch.dashboardTitle.replace(/\s+/g, ' ').trim().slice(0, 60) || 'PaperDeck';
+  }
 
   // Se layout estiver em modo custom e activeWidgets foi atualizado,
   // sincroniza blocks do layout para incluir novas ferramentas ativas
@@ -193,5 +246,7 @@ module.exports = {
   getDataDir,
   DEFAULT_WIDGET_OPTIONS,
   AVAILABLE_WIDGETS,
+  normalizeHeader,
+  normalizeLayout,
 };
 

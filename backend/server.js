@@ -321,6 +321,7 @@ function createServer(deps = {}) {
               notification: activeNotification ? activeNotification.message : null,
               widgetOptions: currentCfg.widgetOptions,
               layout: currentCfg.layout,
+              header: currentCfg.header,
             };
             const script = `<script>window.__INITIAL_DATA__ = ${JSON.stringify(payload)}; window.__INITIAL_I18N__ = ${JSON.stringify(localeData)};</script>`;
             send(res, 200, html.replace('<!--__INJECT__-->', script), { 'Content-Type': MIME['.html'] });

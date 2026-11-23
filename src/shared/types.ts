@@ -128,6 +128,10 @@ export interface DashboardBlock {
   tool: string
   width: 'half' | 'full'
   height?: 'compact' | 'standard' | 'tall'
+  /** Colunas ocupadas na grade de 12 (editor na tela). Tem prioridade sobre `width`. */
+  w?: number
+  /** Linhas ocupadas na grade (editor na tela). Tem prioridade sobre `height`. */
+  h?: number
   options?: Record<string, boolean>
   siteId?: string
 }
@@ -137,8 +141,16 @@ export interface DashboardLayoutConfig {
   blocks: DashboardBlock[]
 }
 
+export interface DashboardHeaderConfig {
+  showDate: boolean
+  showTime: boolean
+  showBattery: boolean
+  text: string
+}
+
 export interface DashboardWidgetsConfig {
   dashboardTitle?: string
+  header?: DashboardHeaderConfig
   activeWidgets: string[]
   availableWidgets: WidgetItem[]
   widgetOptions?: WidgetOptionsMap

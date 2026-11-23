@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import PreviewFrame from '../PreviewFrame'
+import LiveEditFrame from '../LiveEditFrame'
 import type { Translator } from '../i18n'
 import type { KindleLiveInfo, SupportedLanguage } from '../../../shared/types'
 import type { NavKey } from '../types'
@@ -29,6 +30,7 @@ export function PanelView({
   onError,
 }: PanelViewProps): React.JSX.Element {
   const [isEditingLayout, setIsEditingLayout] = useState(false)
+  const [isEditingOnScreen, setIsEditingOnScreen] = useState(false)
   const [showPetBox, setShowPetBox] = useState(false)
   const hasBattery = kindleLive && kindleLive.battery != null
 
@@ -92,9 +94,22 @@ export function PanelView({
             🐱 Mascote
           </ActionButton>
           <ActionButton
+            icon={isEditingOnScreen ? 'check' : 'slider'}
+            className={isEditingOnScreen ? '' : 'ghost'}
+            onClick={() => {
+              setIsEditingLayout(false)
+              setIsEditingOnScreen(!isEditingOnScreen)
+            }}
+          >
+            {isEditingOnScreen ? t('editOnScreenDone') : t('editOnScreen')}
+          </ActionButton>
+          <ActionButton
             icon={isEditingLayout ? 'check' : 'slider'}
             className={isEditingLayout ? '' : 'ghost'}
-            onClick={() => setIsEditingLayout(!isEditingLayout)}
+            onClick={() => {
+              setIsEditingOnScreen(false)
+              setIsEditingLayout(!isEditingLayout)
+            }}
           >
             {isEditingLayout ? '👁️ Ver Preview' : '🎨 Editor de Blocos'}
           </ActionButton>
@@ -134,7 +149,9 @@ export function PanelView({
       ) : (
         <section className="preview-wrap">
           <section className="preview-panel">
-            {baseUrl ? (
+            {baseUrl && isEditingOnScreen ? (
+              <LiveEditFrame baseUrl={baseUrl} language={language} />
+            ) : baseUrl ? (
               <PreviewFrame baseUrl={baseUrl} language={language} previewKey={previewKey} />
             ) : (
               <div className="loading">{t('appLoading')}</div>

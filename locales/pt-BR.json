@@ -170,7 +170,9 @@
     "deviceAdded": "Kindle cadastrado com sucesso",
     "deviceRemoved": "Kindle removido",
     "deviceSelected": "Kindle ativo selecionado",
-    "activeBadge": "Em uso"
+    "activeBadge": "Em uso",
+    "editOnScreen": "✏️ Editar na tela",
+    "editOnScreenDone": "✓ Concluir edição"
   },
   "main": {
     "configInvalid": "Configuração inválida",
@@ -284,6 +286,20 @@
     "netWifi": "Wi-Fi",
     "netEthernet": "Ethernet",
     "netVpn": "VPN",
-    "netOther": "Rede"
+    "netOther": "Rede",
+    "editHint": "Arraste para mover · canto para redimensionar · clique no título ou no canto superior direito para editar",
+    "editAuto": "Layout automático",
+    "editSaving": "salvando…",
+    "editSaved": "salvo ✓",
+    "editError": "não salvou",
+    "editResize": "Arraste para redimensionar",
+    "editTitle": "Clique para renomear",
+    "editHeader": "Escolha o que aparece aqui",
+    "editHeaderEmpty": "info",
+    "headerDate": "Data",
+    "headerTime": "Hora",
+    "headerBattery": "Bateria do Kindle",
+    "headerText": "Texto",
+    "headerTextPlaceholder": "ex.: Escritório"
   }
 }

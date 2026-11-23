@@ -159,7 +159,7 @@ export function LayoutEditor({ onSaved, onError, t, onClose }: LayoutEditorProps
 
   const handleToggleWidth = (id: string) => {
     setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, width: b.width === 'half' ? 'full' : 'half' } : b)),
+      prev.map((b) => (b.id === id ? { ...b, width: b.width === 'half' ? 'full' : 'half', w: undefined } : b)),
     )
   }
 

@@ -51,7 +51,7 @@
   html.kt3 .col-stacked .reset { font-size: 12px; margin-top: 2px; }
   html.kt3 .col-stacked .stat-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
     gap: 4px;
     margin-top: auto;
     padding-top: 6px;
@@ -153,6 +153,72 @@
   .sub { font-size: 28px; margin-top: 14px; line-height: 1.35; }
   .big { font-size: 46px; font-weight: bold; margin-top: auto; }
   .dim { opacity: 0.55; }
+
+  /* Grade de módulos (12 colunas) e ajuste automático do texto ao card */
+  .stage > .cols { min-height: 0; }
+  .card { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+  .card h2 > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-body { flex: 1 1 auto; min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .card-fit { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+  /* Grade de números e listas no layout grande (o modo kt3 sobrescreve abaixo). */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 14px 0; }
+  .stat-box { border: 3px solid #000; padding: 10px 12px; text-align: center; }
+  .stat-val { font-size: 34px; font-weight: bold; }
+  .stat-lbl { font-size: 18px; font-weight: bold; text-transform: uppercase; opacity: 0.8; margin-top: 4px; }
+  .model-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .model-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 24px; padding: 4px 0; border-bottom: 2px dotted #666; }
+  .model-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .model-detail { font-size: 22px; white-space: nowrap; }
+  /* Título do card encolhe com a largura do card. */
+  .card { container-type: inline-size; }
+  html.kt3 .card h2 { font-size: clamp(13px, 10.5cqi, 20px); }
+  html.kt3 .card h2 .logo { width: clamp(16px, 13cqi, 26px); height: clamp(16px, 13cqi, 26px); flex-basis: clamp(16px, 13cqi, 26px); }
+  html .cols.grid-layout {
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 28px;
+  }
+  html.kt3 .cols.grid-layout { display: grid; gap: 12px; }
+  html .cols.grid-layout > .card { flex: none; }
+
+  /* Modo de edição (?edit=1) */
+  .resize-handle, .size-badge { display: none; }
+  html.editing .cols.grid-layout > .card { cursor: grab; outline: 2px dashed #888; outline-offset: 1px; touch-action: none; user-select: none; }
+  html.editing .cols.grid-layout > .card:hover { outline-color: #000; }
+  html.editing .card.dragging { opacity: 0.45; pointer-events: none; cursor: grabbing; z-index: 5; }
+  html.editing .card.drop-before { box-shadow: -7px 0 0 0 #000; }
+  html.editing .card.drop-after { box-shadow: 7px 0 0 0 #000; }
+  html.editing .resize-handle {
+    display: block; position: absolute; right: 0; bottom: 0; width: 22px; height: 22px; cursor: nwse-resize; z-index: 3;
+    background: linear-gradient(135deg, transparent 0 50%, #000 50% 100%);
+  }
+  html.editing .card.resizing .size-badge {
+    display: block; position: absolute; right: 26px; bottom: 4px; z-index: 3;
+    background: #000; color: #fff; font: bold 13px Helvetica, Arial, sans-serif; padding: 2px 7px;
+  }
+  html.editing header { position: relative; }
+  html.editing #title { outline: 2px dashed #888; outline-offset: 2px; cursor: text; min-width: 3ch; }
+  html.editing #title:focus { outline: 2px solid #000; }
+  html.editing #stamp { outline: 2px dashed #888; outline-offset: 2px; cursor: pointer; min-width: 4ch; }
+  #edit-bar {
+    position: fixed; right: 8px; bottom: 8px; z-index: 20; opacity: 0.55; transition: opacity 0.15s ease;
+    display: flex; align-items: center; gap: 10px; white-space: nowrap;
+    background: rgba(0, 0, 0, 0.88); color: #fff; font: 600 12px Helvetica, Arial, sans-serif;
+    padding: 6px 10px; border-radius: 8px;
+  }
+  #edit-bar:hover { opacity: 1; }
+  #edit-hint { max-width: 0; overflow: hidden; transition: max-width 0.2s ease; }
+  #edit-bar:hover #edit-hint { max-width: 640px; }
+  #edit-bar button { font: inherit; background: #fff; color: #000; border: 0; border-radius: 5px; padding: 3px 8px; cursor: pointer; }
+  #edit-status { opacity: 0.8; min-width: 5ch; }
+  #header-pop {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px;
+    display: flex; flex-direction: column; gap: 7px; padding: 10px 12px;
+    background: #fff; border: 2px solid #000; box-shadow: 4px 4px 0 #000;
+    font: 600 13px Helvetica, Arial, sans-serif; text-align: left;
+  }
+  #header-pop[hidden] { display: none; }
+  #header-pop label { display: flex; align-items: center; gap: 8px; }
+  #header-pop input[type=text] { flex: 1; font: inherit; border: 2px solid #000; padding: 3px 5px; min-width: 0; }
 
   /* Sistema / Armazenamento / Rede */
   .meter-sub { font-size: 24px; margin-top: 6px; }
@@ -526,11 +592,11 @@
     }).join('');
     return '<div style="margin:6px 0 10px">' +
            '<div style="font-size:11px;font-weight:bold;margin-bottom:3px">' + (title || 'Histórico 7 dias') + ':</div>' +
-           '<svg width="' + w + '" height="' + (h + 14) + '" viewBox="0 0 ' + w + ' ' + (h + 14) + '">' + bars + '</svg>' +
+           '<svg width="100%" style="max-width:' + (w * 1.5) + 'px;display:block" viewBox="0 0 ' + w + ' ' + (h + 14) + '">' + bars + '</svg>' +
            '</div>';
   }
 
-  function card(t, blockCfg) {
+  function cardMarkup(t, blockCfg) {
     var logo = LOGOS[t.tool] || '';
     var opt = Object.assign({}, (window.__CURRENT_OPTIONS__ && window.__CURRENT_OPTIONS__[t.tool]) || {}, (blockCfg && blockCfg.options) || {});
     var extraClass = (blockCfg && blockCfg.width === 'full') ? ' full-width' : '';
@@ -787,7 +853,141 @@
     return h + '</div>';
   }
 
+  // ---------------------------------------------------------- grade ----
+  var GRID_COLS = 12;
+  var MAX_ROWS = 6;
+  var FIT_MIN = 0.5;
+  var FIT_MAX = 1.6;
+  var EDIT = params.get('edit') === '1';
+  var state = { data: null, blocks: null };
+
+  function clampInt(n, lo, hi) {
+    n = Math.round(Number(n));
+    if (!isFinite(n)) n = lo;
+    return Math.max(lo, Math.min(hi, n));
+  }
+
+  // Blocos antigos usam width (half/full) e height (standard/tall); os novos, w/h na grade.
+  function normalizeBlock(b) {
+    var w = b.w != null ? b.w : (b.width === 'full' ? GRID_COLS : GRID_COLS / 2);
+    var h = b.h != null ? b.h : (b.height === 'tall' ? 2 : 1);
+    return Object.assign({}, b, { w: clampInt(w, 2, GRID_COLS), h: clampInt(h, 1, MAX_ROWS) });
+  }
+
+  function serializeBlock(b) {
+    var out = { id: b.id, tool: b.tool, w: b.w, h: b.h, width: b.w >= GRID_COLS ? 'full' : 'half', height: b.h >= 2 ? 'tall' : 'standard' };
+    if (b.options) out.options = b.options;
+    if (b.siteId) out.siteId = b.siteId;
+    return out;
+  }
+
+  // Envolve o conteúdo do card num corpo de tamanho fixo (para o ajuste de texto)
+  // e marca o card com o bloco/ferramenta e o tamanho na grade.
+  function card(t, blockCfg) {
+    var html = cardMarkup(t, blockCfg);
+    var i = html.indexOf('</h2>');
+    if (i === -1 || html.slice(-6) !== '</div>') return html;
+    var attrs = ' data-tool="' + esc(t.tool) + '"' + (blockCfg && blockCfg.id ? ' data-block="' + esc(blockCfg.id) + '"' : '');
+    if (blockCfg && blockCfg.w) attrs += ' style="grid-column: span ' + blockCfg.w + '; grid-row: span ' + blockCfg.h + '"';
+    html = html.replace('<div class="card', '<div' + attrs + ' class="card');
+    i = html.indexOf('</h2>');
+    var handles = EDIT && blockCfg && blockCfg.id ? '<span class="resize-handle" title="' + esc(copy('editResize')) + '"></span><span class="size-badge"></span>' : '';
+    return html.slice(0, i + 5) + '<div class="card-body"><div class="card-fit">' + html.slice(i + 5, -6) + '</div></div>' + handles + '</div>';
+  }
+
+  // Ajusta o "zoom" do conteúdo de cada card para caber no espaço disponível:
+  // encolhe quando falta espaço e cresce (até FIT_MAX) em cards grandes.
+  function fitCard(cardEl) {
+    var body = cardEl.querySelector('.card-body');
+    var inner = body && body.firstElementChild;
+    if (!inner) return;
+    inner.style.zoom = '';
+    inner.style.width = '';
+    inner.style.height = '';
+    inner.style.flex = '';
+    var W = body.clientWidth;
+    var H = body.clientHeight;
+    if (W < 10 || H < 10) return;
+
+    // Mede o conteúdo (altura natural) com o zoom z e a largura equivalente.
+    inner.style.flex = 'none';
+    function measure(z) {
+      inner.style.zoom = String(z);
+      inner.style.width = (W / z) + 'px';
+      inner.style.height = 'auto';
+      return { h: inner.scrollHeight, overflowX: inner.scrollWidth > inner.clientWidth + 1 };
+    }
+    var base = measure(1);
+    function fits(z) {
+      var m = measure(z);
+      if (m.overflowX || m.h > H / z + 1) return false;
+      // Crescer só enquanto não criar novas quebras de linha.
+      return z <= 1 || m.h <= base.h + 2;
+    }
+
+    var lo = FIT_MIN;
+    var hi = FIT_MAX;
+    if (fits(1)) lo = 1; else hi = 1;
+    if (lo === 1 && fits(FIT_MAX)) {
+      lo = FIT_MAX;
+    } else {
+      for (var k = 0; k < 8; k++) {
+        var mid = (lo + hi) / 2;
+        if (fits(mid)) lo = mid; else hi = mid;
+      }
+    }
+    var z = Math.floor(lo * 100) / 100;
+    inner.style.flex = '';
+    inner.style.zoom = String(z);
+    inner.style.width = (W / z) + 'px';
+    inner.style.height = (H / z) + 'px';
+  }
+
+  function fitAll() {
+    var cards = document.querySelectorAll('#cols .card');
+    for (var i = 0; i < cards.length; i++) fitCard(cards[i]);
+  }
+
+  function renderHeader(data) {
+    var cfg = data.header || {};
+    var parts = [];
+    var d = new Date(data.updatedAt || Date.now());
+    if (cfg.text) parts.push(String(cfg.text));
+    if (cfg.showDate !== false) parts.push(d.toLocaleDateString(locale()));
+    if (cfg.showTime !== false) parts.push(d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }));
+    if (cfg.showBattery !== false) {
+      if (data.kindleStatus && data.kindleStatus.battery != null) {
+        parts.push((data.kindleStatus.isCharging ? '⚡' : '🔋') + ' ' + data.kindleStatus.battery + '%');
+      } else {
+        parts.push('🔋 --%');
+      }
+    }
+    var text = parts.join('  ');
+    if (!text && EDIT) text = '＋ ' + copy('editHeaderEmpty');
+    document.getElementById('stamp').textContent = text;
+    var title = document.getElementById('title');
+    if (document.activeElement !== title) {
+      title.textContent = data.dashboardTitle || copy('title') || 'PaperDeck';
+    }
+  }
+
+  function presetMarkup(tools) {
+    var claudeIdx = -1;
+    var antigravityIdx = -1;
+    for (var i = 0; i < tools.length; i++) {
+      if (tools[i].tool === 'claude') claudeIdx = i;
+      if (tools[i].tool === 'antigravity') antigravityIdx = i;
+    }
+    if (claudeIdx !== -1 && antigravityIdx !== -1) {
+      var others = tools.filter(function (t, idx) { return idx !== claudeIdx && idx !== antigravityIdx; });
+      return '<div class="col-stacked">' + card(tools[claudeIdx]) + card(tools[antigravityIdx]) + '</div>' +
+             others.map(function (t) { return card(t); }).join('');
+    }
+    return tools.map(function (t) { return card(t); }).join('');
+  }
+
   function render(data) {
+    state.data = data;
     window.__CURRENT_OPTIONS__ = data.widgetOptions || {};
     var notifyEl = document.getElementById('notify-box');
     if (data.notification) {
@@ -798,47 +998,286 @@
     }
 
     var tools = data.tools || [];
-    var html = '';
+    var layout = data.layout || {};
+    var colsEl = document.getElementById('cols');
+    var custom = layout.mode === 'custom' && Array.isArray(layout.blocks) && layout.blocks.length > 0;
+    if (!state.blocks && custom) state.blocks = layout.blocks.map(normalizeBlock);
 
-    // Modo customizado ou preset?
-    if (data.layout && data.layout.mode === 'custom' && Array.isArray(data.layout.blocks) && data.layout.blocks.length > 0) {
+    if (state.blocks) {
       var toolsMap = {};
-      tools.forEach(function(t) { toolsMap[t.tool] = t; });
-      html = data.layout.blocks.map(function(block) {
+      tools.forEach(function (t) { toolsMap[t.tool] = t; });
+      colsEl.className = 'cols grid-layout';
+      colsEl.innerHTML = state.blocks.map(function (block) {
         var t = toolsMap[block.tool];
-        if (!t) return '';
-        return card(t, block);
+        return t ? card(t, block) : '';
       }).join('');
     } else {
-      var claudeIdx = -1;
-      var antigravityIdx = -1;
-      for (var i = 0; i < tools.length; i++) {
-        if (tools[i].tool === 'claude') claudeIdx = i;
-        if (tools[i].tool === 'antigravity') antigravityIdx = i;
-      }
-
-      if (claudeIdx !== -1 && antigravityIdx !== -1) {
-        var claudeTool = tools[claudeIdx];
-        var antigravityTool = tools[antigravityIdx];
-        var others = tools.filter(function(t, idx) { return idx !== claudeIdx && idx !== antigravityIdx; });
-        html += '<div class="col-stacked">' + card(claudeTool) + card(antigravityTool) + '</div>';
-        others.forEach(function(t) { html += card(t); });
-      } else {
-        html = tools.map(function(t) { return card(t); }).join('');
-      }
+      colsEl.className = 'cols';
+      colsEl.innerHTML = presetMarkup(tools);
     }
 
-    document.getElementById('cols').innerHTML = html;
-    var d = new Date(data.updatedAt || Date.now());
-    var timeStr = d.toLocaleDateString(locale()) + '  ' + d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
-    if (data.kindleStatus && data.kindleStatus.battery != null) {
-      var icon = data.kindleStatus.isCharging ? '⚡' : '🔋';
-      timeStr += '  ' + icon + ' ' + data.kindleStatus.battery + '%';
-    } else {
-      timeStr += '  🔋 --%';
-    }
-    document.getElementById('stamp').textContent = timeStr;
+    renderHeader(data);
+    fitAll();
     document.title = readyId ? 'READY:' + readyId : 'READY';
+  }
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(fitAll, 120);
+  });
+
+  // ------------------------------------------------------- edição ----
+  // Ativada com ?edit=1 (prévia editável do app). Arrastar reposiciona,
+  // o canto inferior direito redimensiona, o título e o canto superior
+  // direito são editáveis. Tudo é salvo em /api/config.
+
+  var editReady = false;
+  var pendingPatch = null;
+  var saveTimer = null;
+
+  function setEditStatus(key) {
+    var el = document.getElementById('edit-status');
+    if (el) el.textContent = key ? copy(key) : '';
+  }
+
+  function saveConfig(patch) {
+    pendingPatch = Object.assign(pendingPatch || {}, patch);
+    setEditStatus('editSaving');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      var body = pendingPatch;
+      pendingPatch = null;
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/config', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setEditStatus('editSaved');
+          try { window.parent.postMessage({ type: 'paperdeck:config-saved' }, '*'); } catch (_e) {}
+        } else {
+          setEditStatus('editError');
+        }
+      };
+      xhr.onerror = function () { setEditStatus('editError'); };
+      xhr.send(JSON.stringify(body));
+    }, 350);
+  }
+
+  function saveLayout() {
+    var layout = { mode: 'custom', blocks: state.blocks.map(serializeBlock) };
+    state.data.layout = layout;
+    saveConfig({ layout: layout });
+  }
+
+  // Converte o layout automático (preset) em blocos da grade, medindo os cards.
+  function snapshotBlocks() {
+    var colsEl = document.getElementById('cols');
+    var box = colsEl.getBoundingClientRect();
+    var cards = [].slice.call(colsEl.querySelectorAll('.card[data-tool]'));
+    if (!cards.length || !box.width) return [];
+    var minH = Math.min.apply(null, cards.map(function (c) { return c.getBoundingClientRect().height; })) || 1;
+    var items = cards.map(function (c, i) {
+      var r = c.getBoundingClientRect();
+      var c0 = Math.round(((r.left - box.left) / box.width) * GRID_COLS);
+      var c1 = Math.round(((r.right - box.left) / box.width) * GRID_COLS);
+      var tool = c.getAttribute('data-tool');
+      return {
+        top: r.top,
+        left: r.left,
+        block: { id: 'b_' + tool + '_' + i, tool: tool, w: clampInt(c1 - c0, 2, GRID_COLS), h: clampInt(r.height / minH, 1, MAX_ROWS) }
+      };
+    });
+    items.sort(function (a, b) { return Math.abs(a.top - b.top) > 4 ? a.top - b.top : a.left - b.left; });
+    return items.map(function (it) { return it.block; });
+  }
+
+  function stageScale() {
+    var stage = document.querySelector('.stage');
+    return stage && stage.offsetWidth ? stage.getBoundingClientRect().width / stage.offsetWidth : 1;
+  }
+
+  function findBlockIndex(id) {
+    for (var i = 0; i < state.blocks.length; i++) if (state.blocks[i].id === id) return i;
+    return -1;
+  }
+
+  function clearDropMarks() {
+    var marked = document.querySelectorAll('.drop-before, .drop-after');
+    for (var i = 0; i < marked.length; i++) marked[i].classList.remove('drop-before', 'drop-after');
+  }
+
+  function initEdit() {
+    document.documentElement.classList.add('editing');
+
+    var bar = document.createElement('div');
+    bar.id = 'edit-bar';
+    bar.innerHTML = '<span aria-hidden="true">✎</span><span id="edit-hint">' + esc(copy('editHint')) + '</span><button type="button" id="edit-auto">' + esc(copy('editAuto')) + '</button><span id="edit-status"></span>';
+    document.body.appendChild(bar);
+
+    // Título editável.
+    var title = document.getElementById('title');
+    title.setAttribute('contenteditable', 'plaintext-only');
+    title.setAttribute('spellcheck', 'false');
+    title.title = copy('editTitle');
+    title.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); title.blur(); }
+    });
+    title.addEventListener('blur', function () {
+      var value = title.textContent.replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!value) value = 'PaperDeck';
+      title.textContent = value;
+      if (value !== state.data.dashboardTitle) {
+        state.data.dashboardTitle = value;
+        saveConfig({ dashboardTitle: value });
+      }
+    });
+
+    // Canto superior direito: o que mostrar.
+    var header = document.querySelector('header');
+    var stamp = document.getElementById('stamp');
+    var pop = document.createElement('div');
+    pop.id = 'header-pop';
+    pop.hidden = true;
+    pop.innerHTML =
+      '<label><input type="checkbox" data-k="showDate"> ' + esc(copy('headerDate')) + '</label>' +
+      '<label><input type="checkbox" data-k="showTime"> ' + esc(copy('headerTime')) + '</label>' +
+      '<label><input type="checkbox" data-k="showBattery"> ' + esc(copy('headerBattery')) + '</label>' +
+      '<label>' + esc(copy('headerText')) + ' <input type="text" data-k="text" maxlength="40" placeholder="' + esc(copy('headerTextPlaceholder')) + '"></label>';
+    header.appendChild(pop);
+    stamp.title = copy('editHeader');
+    stamp.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var cfg = state.data.header || {};
+      var inputs = pop.querySelectorAll('input');
+      for (var i = 0; i < inputs.length; i++) {
+        var k = inputs[i].getAttribute('data-k');
+        if (inputs[i].type === 'checkbox') inputs[i].checked = cfg[k] !== false;
+        else inputs[i].value = cfg[k] || '';
+      }
+      pop.hidden = !pop.hidden;
+    });
+    pop.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { pop.hidden = true; });
+    pop.addEventListener('input', function (e) {
+      var input = e.target;
+      var k = input.getAttribute('data-k');
+      if (!k) return;
+      var cfg = Object.assign({ showDate: true, showTime: true, showBattery: true, text: '' }, state.data.header || {});
+      cfg[k] = input.type === 'checkbox' ? input.checked : input.value.slice(0, 40);
+      state.data.header = cfg;
+      renderHeader(state.data);
+      saveConfig({ header: cfg });
+    });
+
+    // Layout automático: volta ao preset (e reconverte em grade para continuar editando).
+    document.getElementById('edit-auto').addEventListener('click', function () {
+      state.blocks = null;
+      state.data.layout = { mode: 'preset', blocks: [] };
+      render(state.data);
+      state.blocks = snapshotBlocks();
+      render(state.data);
+      saveConfig({ layout: { mode: 'preset', blocks: [] } });
+    });
+
+    // Arrastar e redimensionar.
+    var colsEl = document.getElementById('cols');
+    var drag = null;
+
+    colsEl.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || !state.blocks) return;
+      var cardEl = e.target.closest('.card[data-block]');
+      if (!cardEl) return;
+      var idx = findBlockIndex(cardEl.getAttribute('data-block'));
+      if (idx === -1) return;
+      e.preventDefault();
+      var gap = parseFloat(getComputedStyle(colsEl).columnGap) || 0;
+      drag = {
+        mode: e.target.classList.contains('resize-handle') ? 'resize' : 'move',
+        el: cardEl,
+        idx: idx,
+        x0: e.clientX,
+        y0: e.clientY,
+        rect: cardEl.getBoundingClientRect(),
+        gridWidth: colsEl.getBoundingClientRect().width,
+        gap: gap,
+        scale: stageScale(),
+        started: false,
+        w: state.blocks[idx].w,
+        h: state.blocks[idx].h,
+        target: null,
+        after: false
+      };
+      if (drag.mode === 'resize') {
+        drag.started = true;
+        cardEl.classList.add('resizing');
+      }
+    });
+
+    document.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dx = (e.clientX - drag.x0);
+      var dy = (e.clientY - drag.y0);
+      if (drag.mode === 'resize') {
+        var s = drag.scale;
+        var colW = (drag.gridWidth + drag.gap * s) / GRID_COLS;
+        var rowUnit = (drag.rect.height + drag.gap * s) / state.blocks[drag.idx].h;
+        drag.w = clampInt((drag.rect.width + dx + drag.gap * s) / colW, 2, GRID_COLS);
+        drag.h = clampInt((drag.rect.height + dy + drag.gap * s) / rowUnit, 1, MAX_ROWS);
+        drag.el.style.gridColumn = 'span ' + drag.w;
+        drag.el.style.gridRow = 'span ' + drag.h;
+        var badge = drag.el.querySelector('.size-badge');
+        if (badge) badge.textContent = drag.w + ' × ' + drag.h;
+        return;
+      }
+      if (!drag.started) {
+        if (Math.abs(dx) + Math.abs(dy) < 6) return;
+        drag.started = true;
+        drag.el.classList.add('dragging');
+      }
+      drag.el.style.transform = 'translate(' + (dx / drag.scale) + 'px,' + (dy / drag.scale) + 'px)';
+      clearDropMarks();
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      var target = under && under.closest ? under.closest('.card[data-block]') : null;
+      drag.target = target && target !== drag.el ? target : null;
+      if (drag.target) {
+        var tr = drag.target.getBoundingClientRect();
+        drag.after = e.clientX > tr.left + tr.width / 2;
+        drag.target.classList.add(drag.after ? 'drop-after' : 'drop-before');
+      }
+    });
+
+    function endDrag() {
+      if (!drag) return;
+      var d = drag;
+      drag = null;
+      clearDropMarks();
+      d.el.classList.remove('dragging', 'resizing');
+      d.el.style.transform = '';
+      if (!d.started) return;
+      if (d.mode === 'resize') {
+        var b = state.blocks[d.idx];
+        if (b.w === d.w && b.h === d.h) { render(state.data); return; }
+        b.w = d.w;
+        b.h = d.h;
+      } else {
+        if (!d.target) { render(state.data); return; }
+        var moved = state.blocks.splice(d.idx, 1)[0];
+        var to = findBlockIndex(d.target.getAttribute('data-block'));
+        state.blocks.splice(d.after ? to + 1 : to, 0, moved);
+      }
+      render(state.data);
+      saveLayout();
+    }
+    document.addEventListener('pointerup', endDrag);
+    document.addEventListener('pointercancel', endDrag);
+
+    // Sem layout próprio: converte o automático em grade para poder editar.
+    if (!state.blocks) {
+      state.blocks = snapshotBlocks();
+      render(state.data);
+    }
   }
 
   function unavailableDashboard() {
@@ -881,9 +1320,8 @@
 
   function renderWhenReady() {
     if (!i18nLoaded || !usageLoaded) return;
-    var customTitle = (usage && usage.dashboardTitle) || copy('title') || 'PaperDeck';
-    document.getElementById('title').textContent = customTitle;
     render(usage || unavailableDashboard());
+    if (EDIT && usage && !editReady) { editReady = true; initEdit(); }
   }
 
   if (window.__INITIAL_I18N__ && window.__INITIAL_I18N__.dashboard) {
