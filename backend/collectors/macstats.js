@@ -1,7 +1,8 @@
-// Coletor de estatísticas do macOS (CPU, RAM, Disco, Uptime)
-const fs = require('fs');
+// Coletor de estatísticas do sistema (CPU, RAM, temperatura, uptime).
+// Armazenamento fica no coletor `storage`.
 const os = require('os');
 const { exec } = require('child_process');
+const { readTemperatures } = require('./temperature');
 
 let lastCpuSample = null;
 let lastCpuPct = 0;
@@ -81,46 +82,6 @@ function getVmStatMemory() {
   });
 }
 
-// No macOS (APFS) o "/" é o snapshot selado do sistema (~10–15 GB); os dados do
-// usuário ficam em /System/Volumes/Data, que divide o mesmo container.
-const MAC_DATA_VOLUME = '/System/Volumes/Data';
-const EMPTY_DISK = { totalGb: 0, usedGb: 0, freeGb: 0, pct: 0 };
-
-function getDiskTarget() {
-  if (process.platform === 'darwin' && fs.existsSync(MAC_DATA_VOLUME)) return MAC_DATA_VOLUME;
-  return '/';
-}
-
-// Interpreta a saída de `df -k <alvo>`. "Usado" = total − disponível, o que
-// contabiliza todos os volumes do container APFS (igual ao Finder/Sobre Este Mac).
-function parseDfOutput(stdout) {
-  const lines = String(stdout || '').trim().split('\n');
-  if (lines.length < 2) return { ...EMPTY_DISK };
-  const parts = lines[lines.length - 1].trim().split(/\s+/);
-  const totalKb = Number.parseInt(parts[1], 10) || 0;
-  const availKb = Number.parseInt(parts[3], 10) || 0;
-  if (totalKb <= 0) return { ...EMPTY_DISK };
-  const usedKb = Math.max(0, totalKb - availKb);
-  return {
-    totalGb: Math.round(totalKb / 1024 / 1024),
-    usedGb: Math.round(usedKb / 1024 / 1024),
-    freeGb: Math.round(availKb / 1024 / 1024),
-    pct: Math.max(0, Math.min(100, Math.round((usedKb / totalKb) * 100))),
-  };
-}
-
-function getDiskUsage() {
-  return new Promise((resolve) => {
-    exec(`df -k "${getDiskTarget()}"`, { timeout: 1500 }, (err, stdout) => {
-      if (err || !stdout) {
-        resolve({ ...EMPTY_DISK });
-        return;
-      }
-      resolve(parseDfOutput(stdout));
-    });
-  });
-}
-
 function getOsRelease() {
   return new Promise((resolve) => {
     if (process.platform !== 'darwin') {
@@ -163,9 +124,9 @@ async function collect() {
   }
 
   const cpuPct = computeCpuPct();
-  const [mem, disk, model, osRelease] = await Promise.all([
+  const [mem, temps, model, osRelease] = await Promise.all([
     getVmStatMemory(),
-    getDiskUsage(),
+    readTemperatures(),
     getMacModel(),
     getOsRelease(),
   ]);
@@ -174,14 +135,17 @@ async function collect() {
   cachedStats = {
     tool: 'macstats',
     label: 'Mac Stats',
+    labelKey: 'systemTitle',
     confidence: 'live',
     cpuPct,
     memPct: mem.memPct,
     memTotalGb: mem.memTotalGb,
     memUsedGb: mem.memUsedGb,
-    diskPct: disk.pct,
-    diskUsedGb: disk.usedGb,
-    diskTotalGb: disk.totalGb,
+    cpuTempC: temps.cpuTempC,
+    cpuTempMaxC: temps.cpuTempMaxC,
+    ssdTempC: temps.ssdTempC,
+    batteryTempC: temps.batteryTempC,
+    thermalState: temps.thermalState,
     uptime,
     model,
     osRelease,
@@ -191,4 +155,4 @@ async function collect() {
   return cachedStats;
 }
 
-module.exports = { collect, parseDfOutput };
+module.exports = { collect };

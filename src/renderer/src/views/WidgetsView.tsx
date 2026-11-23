@@ -20,8 +20,16 @@ const WIDGET_DESCRIPTIONS: Record<string, { desc: string; icon: string }> = {
     icon: '🧠',
   },
   macstats: {
-    desc: 'Métricas de hardware do macOS (Uso de CPU, Memória RAM, Disco e Uptime).',
+    desc: 'Métricas do sistema: uso de CPU, memória RAM, temperatura da CPU/SSD e uptime.',
     icon: '💻',
+  },
+  storage: {
+    desc: 'Todos os drives conectados (NVMe, SSD, HD, pendrive, cartão) com uso e espaço livre, detectados automaticamente.',
+    icon: '💾',
+  },
+  network: {
+    desc: 'Velocidade de download (em destaque) e upload em tempo real, interface ativa, IP local e histórico recente.',
+    icon: '📶',
   },
   tamagotchi: {
     desc: 'Mascote virtual (Tamagotchi) para cuidar no Kindle com fome, felicidade e energia.',
@@ -71,9 +79,21 @@ const WIDGET_OPTIONS_SCHEMA: Record<string, { id: string; label: string; default
   macstats: [
     { id: 'cpuBar', label: 'Uso de CPU (%) com barra gráfica', default: true },
     { id: 'ramBar', label: 'Uso de Memória RAM (GB e %)', default: true },
-    { id: 'diskBar', label: 'Espaço em disco raiz (/)', default: true },
+    { id: 'temperature', label: 'Temperatura da CPU e do SSD', default: true },
     { id: 'uptime', label: 'Tempo de atividade (Uptime)', default: true },
-    { id: 'sysInfo', label: 'Modelo do Mac e versão do macOS', default: true },
+    { id: 'sysInfo', label: 'Modelo do computador e versão do sistema', default: true },
+  ],
+  storage: [
+    { id: 'showType', label: 'Tipo do drive (NVMe, SSD, HD, pendrive)', default: true },
+    { id: 'showFree', label: 'Espaço livre de cada drive', default: true },
+    { id: 'showSystem', label: 'Incluir o disco do sistema', default: true },
+  ],
+  network: [
+    { id: 'showUpload', label: 'Velocidade de upload', default: true },
+    { id: 'showChart', label: 'Gráfico de download (últimos 10 min)', default: true },
+    { id: 'showPeak', label: 'Pico e média de download', default: true },
+    { id: 'showInterface', label: 'Interface, IP local e velocidade do link', default: true },
+    { id: 'showTotals', label: 'Total recebido/enviado desde o boot', default: true },
   ],
   tamagotchi: [
     { id: 'showSprite', label: 'Exibir mascote em pixel art', default: true },
