@@ -71,7 +71,7 @@
   html.kt3 .reset { font-size: 13px; margin-top: 3px; }
   html.kt3 .sub { font-size: 14px; margin-top: 6px; line-height: 1.3; }
   html.kt3 .big { font-size: 22px; }
-  html.kt3 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  html.kt3 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 8px 0; }
   html.kt3 .stat-box { border: 2px solid #000; padding: 6px 8px; text-align: center; }
   html.kt3 .stat-val { font-size: 18px; font-weight: bold; }
   html.kt3 .stat-lbl { font-size: 11px; opacity: 0.8; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
@@ -169,10 +169,10 @@
   .model-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 24px; padding: 4px 0; border-bottom: 2px dotted #666; }
   .model-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .model-detail { font-size: 22px; white-space: nowrap; }
-  /* Título do card encolhe com a largura do card. */
-  .card { container-type: inline-size; }
-  html.kt3 .card h2 { font-size: clamp(13px, 10.5cqi, 20px); }
-  html.kt3 .card h2 .logo { width: clamp(16px, 13cqi, 26px); height: clamp(16px, 13cqi, 26px); flex-basis: clamp(16px, 13cqi, 26px); }
+  /* Logo do título acompanha o tamanho da fonte (ajustado em JS para todos os cards). */
+  html.kt3 .card h2 .logo { width: 1.3em; height: 1.3em; flex: 0 0 1.3em; }
+  /* Linhas que não devem quebrar: limitam o crescimento do texto pela largura. */
+  .drive-sub, .row .label, .net-up, .net-chart-cap span, .stat-val, .model-row { white-space: nowrap; }
   html .cols.grid-layout {
     display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
     grid-auto-rows: minmax(0, 1fr); grid-auto-flow: row dense; gap: 28px;
@@ -224,7 +224,9 @@
   .meter-sub { font-size: 24px; margin-top: 6px; }
   .sys-info { font-size: 24px; font-weight: bold; margin: 2px 0 10px; }
   .sys-uptime { font-size: 22px; margin-top: 8px; }
-  .drive { margin: 14px 0; }
+  .drive-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); column-gap: 28px; }
+  html.kt3 .drive-list { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); column-gap: 14px; }
+  .drive { margin: 14px 0; min-width: 0; }
   .drive-head { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: bold; margin-bottom: 6px; }
   .drive-kind { background: #000; color: #fff; padding: 2px 10px; font-size: 22px; letter-spacing: 0.5px; flex: 0 0 auto; }
   .drive-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -238,8 +240,8 @@
   .net-unit { font-size: 44px; font-weight: bold; letter-spacing: 0; }
   .net-bytes { font-size: 24px; font-weight: bold; margin-top: 4px; }
   .net-up { display: flex; justify-content: space-between; align-items: baseline; font-size: 34px; font-weight: bold; margin: 6px 0; }
-  .net-chart { margin: 8px 0 4px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 110px; }
-  .net-chart svg { display: block; width: 100%; flex: 1 1 auto; min-height: 70px; }
+  .net-chart { margin: 8px 0 4px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 60px; }
+  .net-chart svg { display: block; width: 100%; height: 0; flex: 1 1 0; min-height: 30px; }
   .net-chart-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; font-size: 20px; font-weight: bold; margin-top: 4px; }
   .net-chart-cap span { white-space: nowrap; }
   .net-meta { font-size: 22px; margin-top: 6px; line-height: 1.35; }
@@ -259,8 +261,8 @@
   html.kt3 .net-unit { font-size: 22px; }
   html.kt3 .net-bytes { font-size: 12px; margin-top: 1px; }
   html.kt3 .net-up { font-size: 16px; margin: 3px 0; }
-  html.kt3 .net-chart { margin: 4px 0 2px; min-height: 50px; }
-  html.kt3 .net-chart svg { min-height: 34px; }
+  html.kt3 .net-chart { margin: 4px 0 2px; min-height: 28px; }
+  html.kt3 .net-chart svg { min-height: 14px; }
   html.kt3 .net-chart-cap { gap: 0 6px; }
   html.kt3 .net-chart-cap { font-size: 10px; margin-top: 1px; }
   html.kt3 .net-meta { font-size: 11px; margin-top: 3px; }
@@ -471,7 +473,7 @@
     });
     if (drives.length === 0) return '<div class="sub dim">' + copy('noDrives') + '</div>';
     var max = Number(opt.maxDrives) > 0 ? Number(opt.maxDrives) : 6;
-    var h = '';
+    var h = '<div class="drive-list">';
     drives.slice(0, max).forEach(function (d) {
       var kind = opt.showType !== false ? '<span class="drive-kind">' + copy(DRIVE_KIND_KEYS[d.kind] || 'driveUnknown') + '</span>' : '';
       var sub = formatGb(d.usedGb) + ' / ' + formatGb(d.totalGb) + (opt.showFree !== false ? ' · ' + formatGb(d.freeGb) + ' ' + copy('free') : '');
@@ -481,6 +483,7 @@
            '<div class="drive-sub">' + sub + '</div>' +
            '</div>';
     });
+    h += '</div>';
     if (drives.length > max) h += '<div class="drive-more">+' + (drives.length - max) + ' ' + copy('drives') + '</div>';
     return h;
   }
@@ -888,11 +891,70 @@
     var i = html.indexOf('</h2>');
     if (i === -1 || html.slice(-6) !== '</div>') return html;
     var attrs = ' data-tool="' + esc(t.tool) + '"' + (blockCfg && blockCfg.id ? ' data-block="' + esc(blockCfg.id) + '"' : '');
-    if (blockCfg && blockCfg.w) attrs += ' style="grid-column: span ' + blockCfg.w + '; grid-row: span ' + blockCfg.h + '"';
+    if (blockCfg && blockCfg._w) {
+      attrs += ' data-w="' + blockCfg._w + '" data-h="' + blockCfg._h + '"' +
+               ' style="grid-column: ' + (blockCfg._c + 1) + ' / span ' + blockCfg._w + '; grid-row: ' + (blockCfg._r + 1) + ' / span ' + blockCfg._h + '"';
+    }
     html = html.replace('<div class="card', '<div' + attrs + ' class="card');
     i = html.indexOf('</h2>');
     var handles = EDIT && blockCfg && blockCfg.id ? '<span class="resize-handle" title="' + esc(copy('editResize')) + '"></span><span class="size-badge"></span>' : '';
     return html.slice(0, i + 5) + '<div class="card-body"><div class="card-fit">' + html.slice(i + 5, -6) + '</div></div>' + handles + '</div>';
+  }
+
+  // Posiciona os blocos na grade (primeiro encaixe, como grid-auto-flow: dense)
+  // e estica cada card para ocupar células vazias ao redor, para não sobrar
+  // espaço. O tamanho salvo (w/h) não muda; o esticamento é só de exibição.
+  function packBlocks(blocks) {
+    var cells = [];
+    function rowAt(r) {
+      if (!cells[r]) { cells[r] = []; for (var x = 0; x < GRID_COLS; x++) cells[r][x] = false; }
+      return cells[r];
+    }
+    function isFree(r, c) { return !(cells[r] && cells[r][c]); }
+    function areaFree(r, c, w, h) {
+      for (var y = r; y < r + h; y++) for (var x = c; x < c + w; x++) if (!isFree(y, x)) return false;
+      return true;
+    }
+    function fill(r, c, w, h) {
+      for (var y = r; y < r + h; y++) { var row = rowAt(y); for (var x = c; x < c + w; x++) row[x] = true; }
+    }
+    var items = blocks.map(function (b) {
+      var w = Math.min(GRID_COLS, b.w);
+      var h = b.h;
+      for (var r = 0; r < 200; r++) {
+        for (var c = 0; c + w <= GRID_COLS; c++) {
+          if (areaFree(r, c, w, h)) { fill(r, c, w, h); return { block: b, c: c, r: r, w: w, h: h }; }
+        }
+      }
+      return { block: b, c: 0, r: 0, w: w, h: h };
+    });
+    var rows = cells.length;
+    function colFree(p, x) { for (var y = p.r; y < p.r + p.h; y++) if (!isFree(y, x)) return false; return true; }
+    function rowFree(p, y) { if (y >= rows) return false; for (var x = p.c; x < p.c + p.w; x++) if (!isFree(y, x)) return false; return true; }
+    // Buracos à esquerda, depois à direita, depois abaixo.
+    items.forEach(function (p) { while (p.c > 0 && colFree(p, p.c - 1)) { p.c--; p.w++; fill(p.r, p.c, 1, p.h); } });
+    items.forEach(function (p) { while (p.c + p.w < GRID_COLS && colFree(p, p.c + p.w)) { fill(p.r, p.c + p.w, 1, p.h); p.w++; } });
+    items.forEach(function (p) { while (rowFree(p, p.r + p.h)) { fill(p.r + p.h, p.c, p.w, 1); p.h++; } });
+    return { items: items, rows: Math.max(1, rows) };
+  }
+
+  // Um tamanho de título para todos os cards: o maior que cabe em todos.
+  function fitTitles() {
+    var titles = [].slice.call(document.querySelectorAll('#cols .card h2'));
+    if (!titles.length) return;
+    titles.forEach(function (h2) { h2.style.fontSize = ''; });
+    var base = parseFloat(getComputedStyle(titles[0]).fontSize) || 20;
+    function allFit() {
+      return titles.every(function (h2) {
+        var span = h2.querySelector('span');
+        return !span || span.scrollWidth <= span.clientWidth + 1;
+      });
+    }
+    for (var f = 1; f >= 0.6; f -= 0.05) {
+      var size = Math.round(base * f * 10) / 10 + 'px';
+      titles.forEach(function (h2) { h2.style.fontSize = size; });
+      if (allFit()) return;
+    }
   }
 
   // Ajusta o "zoom" do conteúdo de cada card para caber no espaço disponível:
@@ -913,16 +975,13 @@
     inner.style.flex = 'none';
     function measure(z) {
       inner.style.zoom = String(z);
-      inner.style.width = (W / z) + 'px';
+      inner.style.width = ((W - 2) / z) + 'px';
       inner.style.height = 'auto';
       return { h: inner.scrollHeight, overflowX: inner.scrollWidth > inner.clientWidth + 1 };
     }
-    var base = measure(1);
     function fits(z) {
       var m = measure(z);
-      if (m.overflowX || m.h > H / z + 1) return false;
-      // Crescer só enquanto não criar novas quebras de linha.
-      return z <= 1 || m.h <= base.h + 2;
+      return !m.overflowX && m.h <= H / z + 1;
     }
 
     var lo = FIT_MIN;
@@ -939,11 +998,12 @@
     var z = Math.floor(lo * 100) / 100;
     inner.style.flex = '';
     inner.style.zoom = String(z);
-    inner.style.width = (W / z) + 'px';
+    inner.style.width = ((W - 2) / z) + 'px';
     inner.style.height = (H / z) + 'px';
   }
 
   function fitAll() {
+    fitTitles();
     var cards = document.querySelectorAll('#cols .card');
     for (var i = 0; i < cards.length; i++) fitCard(cards[i]);
   }
@@ -1006,13 +1066,16 @@
     if (state.blocks) {
       var toolsMap = {};
       tools.forEach(function (t) { toolsMap[t.tool] = t; });
+      var visible = state.blocks.filter(function (b) { return toolsMap[b.tool]; });
+      var packed = packBlocks(visible);
       colsEl.className = 'cols grid-layout';
-      colsEl.innerHTML = state.blocks.map(function (block) {
-        var t = toolsMap[block.tool];
-        return t ? card(t, block) : '';
+      colsEl.style.gridTemplateRows = 'repeat(' + packed.rows + ', minmax(0, 1fr))';
+      colsEl.innerHTML = packed.items.map(function (p) {
+        return card(toolsMap[p.block.tool], Object.assign({}, p.block, { _c: p.c, _r: p.r, _w: p.w, _h: p.h }));
       }).join('');
     } else {
       colsEl.className = 'cols';
+      colsEl.style.gridTemplateRows = '';
       colsEl.innerHTML = presetMarkup(tools);
     }
 
@@ -1204,8 +1267,10 @@
         gap: gap,
         scale: stageScale(),
         started: false,
-        w: state.blocks[idx].w,
-        h: state.blocks[idx].h,
+        w: Number(cardEl.getAttribute('data-w')) || state.blocks[idx].w,
+        h: Number(cardEl.getAttribute('data-h')) || state.blocks[idx].h,
+        shownH: Number(cardEl.getAttribute('data-h')) || state.blocks[idx].h,
+        shownW: Number(cardEl.getAttribute('data-w')) || state.blocks[idx].w,
         target: null,
         after: false
       };
@@ -1222,11 +1287,12 @@
       if (drag.mode === 'resize') {
         var s = drag.scale;
         var colW = (drag.gridWidth + drag.gap * s) / GRID_COLS;
-        var rowUnit = (drag.rect.height + drag.gap * s) / state.blocks[drag.idx].h;
+        var rowUnit = (drag.rect.height + drag.gap * s) / drag.shownH;
         drag.w = clampInt((drag.rect.width + dx + drag.gap * s) / colW, 2, GRID_COLS);
         drag.h = clampInt((drag.rect.height + dy + drag.gap * s) / rowUnit, 1, MAX_ROWS);
-        drag.el.style.gridColumn = 'span ' + drag.w;
-        drag.el.style.gridRow = 'span ' + drag.h;
+        var area = drag.el.style;
+        area.gridColumnEnd = 'span ' + drag.w;
+        area.gridRowEnd = 'span ' + drag.h;
         var badge = drag.el.querySelector('.size-badge');
         if (badge) badge.textContent = drag.w + ' × ' + drag.h;
         return;
@@ -1258,7 +1324,7 @@
       if (!d.started) return;
       if (d.mode === 'resize') {
         var b = state.blocks[d.idx];
-        if (b.w === d.w && b.h === d.h) { render(state.data); return; }
+        if ((d.w === d.shownW && d.h === d.shownH) || (b.w === d.w && b.h === d.h)) { render(state.data); return; }
         b.w = d.w;
         b.h = d.h;
       } else {
