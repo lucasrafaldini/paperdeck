@@ -13,10 +13,14 @@ const usage = {
 
 let server;
 let baseUrl;
+let lastRequestedWidgets = null;
 
 before(async () => {
   server = createServer({
-    collectAll: async () => usage,
+    collectAll: async (widgets) => {
+      lastRequestedWidgets = widgets;
+      return usage;
+    },
     checkAll: () => [{ name: 'test', ok: true }],
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -39,6 +43,18 @@ test('GET /api/usage returns the normalized collector payload', async () => {
   const response = await fetch(`${baseUrl}/api/usage`);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), usage);
+});
+
+test('GET /api/usage?widgets= limits collection to the listed widgets', async () => {
+  await fetch(`${baseUrl}/api/usage`);
+  assert.equal(lastRequestedWidgets, undefined);
+
+  const response = await fetch(`${baseUrl}/api/usage?widgets=macstats,%20network,macstats,bad%20id,../x`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(lastRequestedWidgets, ['macstats', 'network']);
+
+  await fetch(`${baseUrl}/api/usage?widgets=`);
+  assert.equal(lastRequestedWidgets, undefined);
 });
 
 test('GET /api/usage?mock=1 returns mock data without calling collectors', async () => {
@@ -88,7 +104,10 @@ test('GET /dash.png serves the runtime image path provided by Electron', async (
   fs.writeFileSync(imagePath, image);
 
   const imageServer = createServer({
-    collectAll: async () => usage,
+    collectAll: async (widgets) => {
+      lastRequestedWidgets = widgets;
+      return usage;
+    },
     checkAll: () => [],
     dashImagePath: imagePath,
   });

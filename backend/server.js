@@ -144,6 +144,16 @@ function readLocaleI18n(lang) {
   }
 }
 
+// Lista de widgets vinda da query string: só ids simples, sem duplicatas, no máx. 16.
+function parseWidgetList(value) {
+  if (!value) return [];
+  const ids = String(value)
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => /^[a-z0-9_-]{1,40}$/i.test(id));
+  return [...new Set(ids)].slice(0, 16);
+}
+
 function createServer(deps = {}) {
   const collectAll = deps.collectAll || collectors.collectAll;
   const checkAll = deps.checkAll || preflight.checkAll;
@@ -170,7 +180,9 @@ function createServer(deps = {}) {
       if (/[?&]mock=1/.test(requestUrl)) {
         return send(res, 200, JSON.stringify(mockUsage()), { 'Content-Type': MIME['.json'] });
       }
-      return collectAll()
+      // ?widgets=macstats,network → coleta só esses (usado pelo widget nativo do macOS).
+      const requested = parseWidgetList(new URLSearchParams(requestUrl.split('?')[1] || '').get('widgets'));
+      return collectAll(requested.length > 0 ? requested : undefined)
         .then((data) => send(res, 200, JSON.stringify(data), { 'Content-Type': MIME['.json'] }))
         .catch((error) => send(res, 500, JSON.stringify({ error: String(error) }), { 'Content-Type': MIME['.json'] }));
     }
