@@ -27,6 +27,8 @@ export type IconName =
   | 'arrow-down'
   | 'check'
   | 'pet'
+  | 'bolt'
+  | 'server'
 
 export interface NavItem {
   key: NavKey

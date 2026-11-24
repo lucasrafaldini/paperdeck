@@ -5,6 +5,7 @@ import type { Translator } from '../i18n'
 import type { KindleLiveInfo, SupportedLanguage } from '../../../shared/types'
 import type { NavKey } from '../types'
 import { ActionButton } from '../components/ActionButton'
+import { Icon } from '../components/Icon'
 import { TamagotchiBox } from '../components/TamagotchiBox'
 import { LayoutEditor } from './LayoutEditor'
 
@@ -33,6 +34,13 @@ export function PanelView({
   const [isEditingOnScreen, setIsEditingOnScreen] = useState(false)
   const [showPetBox, setShowPetBox] = useState(false)
   const hasBattery = kindleLive && kindleLive.battery != null
+  const backendPort = (() => {
+    try {
+      return baseUrl ? new URL(baseUrl).port : ''
+    } catch {
+      return ''
+    }
+  })()
 
   useEffect(() => {
     // Se o widget de tamagotchi estiver ativo, abre por padrão
@@ -45,88 +53,75 @@ export function PanelView({
 
   return (
     <section className="dashboard-grid">
-      {/* Top Status & Quick Actions Bar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 18px',
-          background: 'var(--panel)',
-          borderRadius: '10px',
-          border: '1px solid var(--line)',
-          marginBottom: '14px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>{kindleLive?.isCharging ? '⚡' : '🔋'}</span>
-            <div>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', display: 'block' }}>
-                {t('batteryHeader')}
-              </span>
-              <strong style={{ fontSize: '15px' }}>
+      <div className="panel-bar">
+        <div className="panel-bar-status">
+          <div className="panel-stat" title={kindleLive?.isCharging ? t('charging') : undefined}>
+            <span className="panel-stat-icon" aria-hidden="true">
+              <Icon name={kindleLive?.isCharging ? 'bolt' : 'battery'} />
+            </span>
+            <div className="panel-stat-text">
+              <span className="panel-stat-label">{t('batteryHeader')}</span>
+              <strong className="panel-stat-value">
                 {hasBattery ? `${kindleLive.battery}%` : '--%'}
-                {kindleLive?.isCharging ? ` (${t('charging')})` : ''}
+                {kindleLive?.isCharging ? <small>{t('charging')}</small> : null}
               </strong>
             </div>
           </div>
-
-          <div style={{ width: '1px', height: '24px', background: 'var(--line-2)' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>🖥️</span>
-            <div>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', display: 'block' }}>
-                {t('backend')}
-              </span>
-              <strong style={{ fontSize: '15px', color: 'var(--ok)' }}>Online (:8787)</strong>
+          <div className="panel-stat" title={baseUrl}>
+            <span className="panel-stat-icon" aria-hidden="true">
+              <Icon name="server" />
+            </span>
+            <div className="panel-stat-text">
+              <span className="panel-stat-label">{t('backend')}</span>
+              <strong className="panel-stat-value ok">
+                {t('panelOnline')}
+                {backendPort ? <small>:{backendPort}</small> : null}
+              </strong>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <ActionButton
-            icon="slider"
-            className={showPetBox ? '' : 'ghost'}
-            onClick={() => setShowPetBox(!showPetBox)}
-          >
-            🐱 Mascote
-          </ActionButton>
-          <ActionButton
-            icon={isEditingOnScreen ? 'check' : 'slider'}
-            className={isEditingOnScreen ? '' : 'ghost'}
-            onClick={() => {
-              setIsEditingLayout(false)
-              setIsEditingOnScreen(!isEditingOnScreen)
-            }}
-          >
-            {isEditingOnScreen ? t('editOnScreenDone') : t('editOnScreen')}
-          </ActionButton>
-          <ActionButton
-            icon={isEditingLayout ? 'check' : 'slider'}
-            className={isEditingLayout ? '' : 'ghost'}
-            onClick={() => {
-              setIsEditingOnScreen(false)
-              setIsEditingLayout(!isEditingLayout)
-            }}
-          >
-            {isEditingLayout ? '👁️ Ver Preview' : '🎨 Editor de Blocos'}
-          </ActionButton>
-          <ActionButton
-            icon="slider"
-            className="ghost"
-            onClick={() => onNav('widgets')}
-          >
-            {t('menuWidgets')}
-          </ActionButton>
-          <ActionButton
-            icon="bell"
-            className="ghost"
-            onClick={() => onNav('notificacoes')}
-          >
-            {t('menuNotify')}
-          </ActionButton>
+        <div className="panel-bar-actions">
+          <div className="panel-bar-group">
+            <ActionButton
+              icon={isEditingOnScreen ? 'check' : 'edit'}
+              className={isEditingOnScreen ? '' : 'ghost'}
+              aria-pressed={isEditingOnScreen}
+              onClick={() => {
+                setIsEditingLayout(false)
+                setIsEditingOnScreen(!isEditingOnScreen)
+              }}
+            >
+              {isEditingOnScreen ? t('editOnScreenDone') : t('editOnScreen')}
+            </ActionButton>
+            <ActionButton
+              icon={isEditingLayout ? 'check' : 'slider'}
+              className={isEditingLayout ? '' : 'ghost'}
+              aria-pressed={isEditingLayout}
+              onClick={() => {
+                setIsEditingOnScreen(false)
+                setIsEditingLayout(!isEditingLayout)
+              }}
+            >
+              {isEditingLayout ? t('blockEditorDone') : t('blockEditor')}
+            </ActionButton>
+            <ActionButton
+              icon="pet"
+              className={showPetBox ? '' : 'ghost'}
+              aria-pressed={showPetBox}
+              onClick={() => setShowPetBox(!showPetBox)}
+            >
+              {t('panelPet')}
+            </ActionButton>
+          </div>
+          <div className="panel-bar-group panel-bar-nav">
+            <ActionButton icon="settings" className="ghost" title={t('menuWidgets')} onClick={() => onNav('widgets')}>
+              {t('menuWidgets')}
+            </ActionButton>
+            <ActionButton icon="bell" className="ghost" title={t('menuNotify')} onClick={() => onNav('notificacoes')}>
+              {t('menuNotify')}
+            </ActionButton>
+          </div>
         </div>
       </div>
 

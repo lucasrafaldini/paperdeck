@@ -171,8 +171,12 @@
     "deviceRemoved": "Kindle removido",
     "deviceSelected": "Kindle ativo selecionado",
     "activeBadge": "Em uso",
-    "editOnScreen": "✏️ Editar na tela",
-    "editOnScreenDone": "✓ Concluir edição"
+    "editOnScreen": "Editar na tela",
+    "editOnScreenDone": "Concluir edição",
+    "blockEditor": "Editor de blocos",
+    "blockEditorDone": "Voltar à prévia",
+    "panelPet": "Mascote",
+    "panelOnline": "Online"
   },
   "main": {
     "configInvalid": "Configuração inválida",

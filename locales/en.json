@@ -171,8 +171,12 @@
     "deviceRemoved": "Kindle removed",
     "deviceSelected": "Active Kindle changed",
     "activeBadge": "Active",
-    "editOnScreen": "✏️ Edit on screen",
-    "editOnScreenDone": "✓ Done editing"
+    "editOnScreen": "Edit on screen",
+    "editOnScreenDone": "Done editing",
+    "blockEditor": "Block editor",
+    "blockEditorDone": "Back to preview",
+    "panelPet": "Pet",
+    "panelOnline": "Online"
   },
   "main": {
     "configInvalid": "Invalid configuration",

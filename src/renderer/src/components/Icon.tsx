@@ -182,6 +182,21 @@ export function Icon({ name }: { name: IconName }): React.JSX.Element {
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
         </svg>
       )
+    case 'bolt':
+      return (
+        <svg {...common} aria-hidden="true">
+          <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />
+        </svg>
+      )
+    case 'server':
+      return (
+        <svg {...common} aria-hidden="true">
+          <rect x="3" y="4" width="18" height="7" rx="2" />
+          <rect x="3" y="13" width="18" height="7" rx="2" />
+          <line x1="7" y1="7.5" x2="7.01" y2="7.5" />
+          <line x1="7" y1="16.5" x2="7.01" y2="16.5" />
+        </svg>
+      )
     case 'pet':
       return (
         <svg {...common} aria-hidden="true">

@@ -1004,6 +1004,147 @@ button.danger:hover:not(:disabled) {
   overflow: visible;
 }
 
+/* ---- barra de status e ações do painel ---- */
+
+.panel-bar {
+  container-type: inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.panel-bar-status {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.panel-stat {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.panel-stat + .panel-stat {
+  padding-left: 18px;
+  border-left: 1px solid var(--line-2);
+}
+
+.panel-stat-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text-dim);
+}
+
+.panel-stat-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.panel-stat-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.panel-stat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.panel-stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.panel-stat-value small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.panel-stat-value.ok {
+  color: var(--ok);
+}
+
+.panel-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.panel-bar-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-bar-nav {
+  padding-left: 8px;
+  border-left: 1px solid var(--line-2);
+}
+
+.panel-bar .ui-button {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 13.5px;
+}
+
+/* Os cortes seguem a largura da própria barra (não da janela):
+   1) some o rótulo dos atalhos de navegação (fica o ícone, com title);
+   2) somem os complementos do status ("Carregando", porta) — o ícone já diz;
+   3) as ações descem para uma linha própria, ocupando a largura toda. */
+@container (max-width: 1080px) {
+  .panel-bar-nav .button-label {
+    display: none;
+  }
+
+  .panel-bar-nav .ui-button {
+    width: 34px;
+    padding: 0;
+  }
+}
+
+@container (max-width: 900px) {
+  .panel-stat-value small {
+    display: none;
+  }
+}
+
+@container (max-width: 800px) {
+  .panel-bar-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+}
+
 /* ---- preview / painel ---- */
 
 .preview-wrap {
