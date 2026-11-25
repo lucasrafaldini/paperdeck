@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented here.
 
+## [v2.1.0](https://github.com/lucasrafaldini/paperdeck/releases/tag/v2.1.0) - 2026-11-25
+
+PaperDeck v2.1.0 — themes, a Kindle connect wizard, System/Storage/Network widgets and a native macOS widget.
+
+### Added
+- Seven control-panel themes (Midnight, Daylight, Glass, Solar, Solar Night, Nord, Paper) plus **System**, with a preview gallery in Settings. The e-ink render stays black and white. (#21)
+- **Connect a Kindle** wizard: scans the local network for SSH hosts (Dropbear is flagged as a likely Kindle), tests SSH with the given credentials and only saves the device when the check succeeds. (#21)
+- The PC data module is split into **System** (CPU, RAM, chip/SSD temperature without sudo, uptime), **Storage** (every mounted drive labelled NVMe/SSD/HDD/USB/SD/network, with real APFS container usage) and **Network** (download/upload speed with a 10-minute chart) widgets. (#26)
+- Native macOS desktop widget (WidgetKit) for System & Network in small, medium and large sizes, embedded in macOS builds when Xcode is available. `/api/usage` accepts a `?widgets=a,b` filter. (#28)
+- CI runs tests, typecheck and build on Linux, macOS and Windows. (#27)
+
+### Fixed
+- The dashboard stopped reaching the Kindle after the computer's IP changed: the app heals an IP-literal dashboard URL, **Start** rewrites the Kindle's URL, and the Kindle loop scans its whole /24 (with an `ifconfig` fallback). (#21)
+- `dash-loop.sh` ignored `TERM`, so every start stacked another loop on the Kindle; loops now exit cleanly and a new loop replaces the old one. (#21)
+- Disk usage on macOS reported the sealed system snapshot (~6–34%) instead of the APFS container's real usage. (#26)
+- Narrow cards: stat grids collapse to 2×2 and shrink instead of overflowing or breaking words; long card titles truncate. (#21)
+- OpenCode shows a readable model name instead of the model cache path, keeps its header on one line, and is only reported active when the OpenCode executable is running. (#21)
+- macOS version came from the Darwin kernel release; the first CPU reading is no longer always 0%. (#26)
+- Tamagotchi and Codex tests no longer depend on the time of day or on file-timestamp resolution. (#21, #26)
+
+### Changed
+- Users who had the System widget active stop seeing disk usage until they enable **Storage** on the widgets screen.
+- Dependency updates: Electron 42.11.16, Vite 7.3.7, undici, fast-uri, nanoid, js-yaml, @xmldom/xmldom, brace-expansion, baseline-browser-mapping, browserslist; optimized repository images.
+
 ## [v2.0.0](https://github.com/lucasrafaldini/paperdeck/releases/tag/v2.0.0) - 2026-09-30
 
 PaperDeck v2.0.0 — The e-ink smart workstation & companion dashboard.
