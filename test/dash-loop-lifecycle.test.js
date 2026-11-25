@@ -38,6 +38,10 @@ async function waitFor(predicate, timeoutMs) {
   return predicate();
 }
 
+// The loop is a BusyBox/POSIX script for the Kindle. Under Git Bash on Windows
+// `$$` is an MSYS PID that never matches Node's child.pid, so skip there.
+const SKIP_ON_WINDOWS = process.platform === 'win32' && 'POSIX-only: Git Bash PIDs differ from Node child PIDs';
+
 function readPid(dir) {
   try {
     return fs.readFileSync(path.join(dir, 'dash-loop.pid'), 'utf8').trim();
@@ -50,7 +54,7 @@ function within(promise, ms) {
   return Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve(false), ms))]);
 }
 
-test('dash-loop exits promptly on TERM and removes its own PID file', async () => {
+test('dash-loop exits promptly on TERM and removes its own PID file', { skip: SKIP_ON_WINDOWS }, async () => {
   const dir = sandbox();
   const loop = startLoop(dir);
   try {
@@ -64,7 +68,7 @@ test('dash-loop exits promptly on TERM and removes its own PID file', async () =
   }
 });
 
-test('starting a new dash-loop replaces the running one instead of stacking', async () => {
+test('starting a new dash-loop replaces the running one instead of stacking', { skip: SKIP_ON_WINDOWS }, async () => {
   const dir = sandbox();
   const first = startLoop(dir);
   let second;
