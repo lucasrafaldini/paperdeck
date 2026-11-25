@@ -8,4 +8,6 @@ release/
 !.env.example
 *.log
 *.pid
-build/bin/
+
+# Build da extensão WidgetKit do macOS
+macos-widget/build/

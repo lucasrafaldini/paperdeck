@@ -78,20 +78,21 @@
   /* Cards are size containers so stat grids adapt to any column width. */
   html.kt3 .card { container-type: inline-size; }
   html.kt3 .stat-val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  html.kt3 .stat-lbl { overflow-wrap: anywhere; }
+  html.kt3 .card h2 > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @container (max-width: 300px) {
     html.kt3 .stat-grid,
     html.kt3 .col-stacked .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
   }
+  /* Five columns leave ~185px per card: shrink stats instead of breaking words. */
+  @container (max-width: 220px) {
+    html.kt3 .card h2 { font-size: 17px; }
+    html.kt3 .stat-box { padding: 4px 3px; }
+    html.kt3 .stat-val { font-size: 15px; }
+    html.kt3 .stat-lbl { font-size: 9px; letter-spacing: -0.02em; }
+  }
   html.kt3 .card-meta { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; }
   html.kt3 .card-meta-name { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   html.kt3 .card-meta-status { flex: 0 0 auto; font-size: 12px; font-weight: bold; white-space: nowrap; }
-  html.kt3 .disk-row { margin: 3px 0; }
-  html.kt3 .disk-row .label { font-size: 13px; margin-bottom: 1px; }
-  html.kt3 .disk-row .bar { height: 11px; border-width: 2px; }
-  html.kt3 .disk-meta { font-size: 12px; margin-top: 1px; }
-  html.kt3 .mac-meta { font-size: 12px; margin: 0 0 4px; }
-  html.kt3 .mac-foot { font-size: 12px; padding-top: 4px; border-top-width: 1px; }
   html.kt3 .model-list { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
   html.kt3 .model-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 3px 0; border-bottom: 1px dotted #666; }
   html.kt3 .model-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
@@ -163,20 +164,6 @@
   .bar > i { display: block; height: 100%; background: #000; }
   .reset { font-size: 34px; margin-top: 10px; }
 
-  /* Mac Stats: uma linha compacta por disco para caber todos no card. */
-  .disk-row { margin: 10px 0; }
-  .disk-row .label { font-size: 24px; margin-bottom: 4px; gap: 8px; }
-  .disk-row .label span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .disk-row .label span:last-child { flex: 0 0 auto; }
-  .disk-row .bar { height: 20px; }
-  .disk-meta { font-size: 20px; margin-top: 3px; }
-  .mac-meta { font-size: 22px; font-weight: bold; margin: 0 0 8px; }
-  .mac-foot {
-    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px;
-    margin-top: auto; padding-top: 8px; border-top: 2px solid #000;
-    font-size: 22px; font-weight: bold;
-  }
-
   .notify-banner {
     background: #000; color: #fff; padding: 6px 12px; font-size: 15px; font-weight: bold;
     margin-bottom: 10px; border: 2px solid #000; text-align: center;
@@ -184,6 +171,51 @@
   .sub { font-size: 28px; margin-top: 14px; line-height: 1.35; }
   .big { font-size: 46px; font-weight: bold; margin-top: auto; }
   .dim { opacity: 0.55; }
+
+  /* Sistema / Armazenamento / Rede */
+  .meter-sub { font-size: 24px; margin-top: 6px; }
+  .sys-info { font-size: 24px; font-weight: bold; margin: 2px 0 10px; }
+  .sys-uptime { font-size: 22px; margin-top: 8px; }
+  .drive { margin: 14px 0; }
+  .drive-head { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: bold; margin-bottom: 6px; }
+  .drive-kind { background: #000; color: #fff; padding: 2px 10px; font-size: 22px; letter-spacing: 0.5px; flex: 0 0 auto; }
+  .drive-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .drive-pct { flex: 0 0 auto; }
+  .drive .bar { height: 22px; }
+  .drive-sub { font-size: 22px; margin-top: 4px; }
+  .drive-more { font-size: 22px; font-weight: bold; margin-top: 4px; }
+  .net-hero { border: 4px solid #000; padding: 10px 16px 12px; margin: 4px 0 12px; }
+  .net-label { font-size: 24px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+  .net-big { font-size: 120px; font-weight: 900; line-height: 1; letter-spacing: -3px; white-space: nowrap; }
+  .net-unit { font-size: 44px; font-weight: bold; letter-spacing: 0; }
+  .net-bytes { font-size: 24px; font-weight: bold; margin-top: 4px; }
+  .net-up { display: flex; justify-content: space-between; align-items: baseline; font-size: 34px; font-weight: bold; margin: 6px 0; }
+  .net-chart { margin: 8px 0 4px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 110px; }
+  .net-chart svg { display: block; width: 100%; flex: 1 1 auto; min-height: 70px; }
+  .net-chart-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; font-size: 20px; font-weight: bold; margin-top: 4px; }
+  .net-chart-cap span { white-space: nowrap; }
+  .net-meta { font-size: 22px; margin-top: 6px; line-height: 1.35; }
+
+  html.kt3 .meter-sub { font-size: 12px; margin-top: 2px; }
+  html.kt3 .sys-info { font-size: 13px; margin: 2px 0 6px; }
+  html.kt3 .sys-uptime { font-size: 12px; margin-top: 4px; }
+  html.kt3 .drive { margin: 5px 0; }
+  html.kt3 .drive-head { gap: 6px; font-size: 13px; margin-bottom: 2px; }
+  html.kt3 .drive-kind { font-size: 10px; padding: 1px 5px; }
+  html.kt3 .drive .bar { height: 10px; border-width: 2px; }
+  html.kt3 .drive-sub { font-size: 11px; margin-top: 1px; }
+  html.kt3 .drive-more { font-size: 11px; margin-top: 2px; }
+  html.kt3 .net-hero { border-width: 3px; padding: 4px 10px 6px; margin: 0 0 6px; }
+  html.kt3 .net-label { font-size: 12px; }
+  html.kt3 .net-big { font-size: 54px; letter-spacing: -1.5px; }
+  html.kt3 .net-unit { font-size: 22px; }
+  html.kt3 .net-bytes { font-size: 12px; margin-top: 1px; }
+  html.kt3 .net-up { font-size: 16px; margin: 3px 0; }
+  html.kt3 .net-chart { margin: 4px 0 2px; min-height: 50px; }
+  html.kt3 .net-chart svg { min-height: 34px; }
+  html.kt3 .net-chart-cap { gap: 0 6px; }
+  html.kt3 .net-chart-cap { font-size: 10px; margin-top: 1px; }
+  html.kt3 .net-meta { font-size: 11px; margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -236,13 +268,7 @@
       sessions: 'sessions',
       goLimits: 'Go plan limits without API',
       claudeStale: 'Claude limits outdated',
-      codexStale: 'local limits outdated (Codex used outside the CLI)',
-      disksNone: 'No disks found',
-      diskFree: 'free',
-      tempChip: 'Chip',
-      tempMax: 'max',
-      tempSsd: 'SSD',
-      uptime: 'Uptime'
+      codexStale: 'local limits outdated (Codex used outside the CLI)'
     }
   };
 
@@ -262,6 +288,8 @@
     antigravity: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#000" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chaosmachine: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" stroke="#000" stroke-width="2.2" fill="none"/><line x1="8" y1="21" x2="16" y2="21" stroke="#000" stroke-width="2.2"/><line x1="12" y1="17" x2="12" y2="21" stroke="#000" stroke-width="2.2"/><circle cx="6" cy="14" r="1" fill="#000"/></svg>',
     macstats: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" stroke="#000" stroke-width="2.2" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="#000" stroke-width="2.2"/><line x1="9" y1="16" x2="9" y2="20" stroke="#000" stroke-width="2"/><line x1="15" y1="16" x2="15" y2="20" stroke="#000" stroke-width="2"/></svg>',
+    storage: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="1.5" stroke="#000" stroke-width="2.2" fill="none"/><rect x="3" y="13" width="18" height="7" rx="1.5" stroke="#000" stroke-width="2.2" fill="none"/><circle cx="17" cy="7.5" r="1.3" fill="#000"/><circle cx="17" cy="16.5" r="1.3" fill="#000"/></svg>',
+    network: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v14M7 17l-4-4M7 17l4-4" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 21V7M17 7l-4 4M17 7l4 4" stroke="#000" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     opencode: '<svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="3" stroke="#000" stroke-width="2.2" fill="none"/><path d="M7 8l4 4-4 4M13 16h4" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
 
@@ -274,32 +302,6 @@
       minimumFractionDigits: 0,
       maximumFractionDigits: 1
     }) + '%';
-  }
-
-  function esc(value) {
-    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
-    });
-  }
-
-  // Model ids can be full cache paths, e.g.
-  // "local-mlx//Volumes/X/hf_cache/models--org--Qwen3-27B/snapshots/<sha>/2-bit".
-  // Show "Qwen3-27B · 2-bit" instead of the path (which also leaks local dirs).
-  function modelLabel(raw) {
-    var value = String(raw || '').trim();
-    var hf = value.match(/models--[^/]+?--([^/]+)(?:\/snapshots\/[0-9a-f]+\/?([^/]*))?/i);
-    if (hf) return hf[1] + (hf[2] ? ' · ' + hf[2] : '');
-    var parts = value.split('/').filter(Boolean);
-    return parts.length ? parts[parts.length - 1] : value;
-  }
-
-  // Bytes decimais, como o Finder: 245 GB, 1,0 TB.
-  function bytes(value) {
-    var n = Number(value) || 0;
-    if (n >= 1e12) {
-      return (n / 1e12).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' TB';
-    }
-    return Math.round(n / 1e9).toLocaleString(locale()) + ' GB';
   }
 
   function money(cents, cur) {
@@ -340,6 +342,165 @@
     return '<div class="row"><div class="label"><span>' + name + '</span><span>' +
            copy('unavailable') + '</span></div>' +
            '<div class="sub dim">! ' + copy('codexStale') + '</div></div>';
+  }
+
+  // Model ids can be full cache paths, e.g.
+  // "local-mlx//Volumes/X/hf_cache/models--org--Qwen3-27B/snapshots/<sha>/2-bit".
+  // Show "Qwen3-27B · 2-bit" instead of the path (which also leaks local dirs).
+  function modelLabel(raw) {
+    var value = String(raw || '').trim();
+    var hf = value.match(/models--[^/]+?--([^/]+)(?:\/snapshots\/[0-9a-f]+\/?([^/]*))?/i);
+    if (hf) return hf[1] + (hf[2] ? ' · ' + hf[2] : '');
+    var parts = value.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : value;
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function num(value, digits) {
+    return Number(value).toLocaleString(locale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+
+  // Velocidade de rede em bits/s (convenção de provedores): { value, unit }.
+  function formatRate(bytesPerSec) {
+    var bits = Math.max(0, Number(bytesPerSec) || 0) * 8;
+    if (bits >= 1e9) return { value: num(bits / 1e9, 2), unit: 'Gbps' };
+    if (bits >= 1e6) return { value: num(bits / 1e6, bits >= 1e8 ? 0 : 1), unit: 'Mbps' };
+    if (bits >= 1e3) return { value: num(bits / 1e3, 0), unit: 'Kbps' };
+    return { value: num(bits, 0), unit: 'bps' };
+  }
+
+  function formatBytes(bytes) {
+    var b = Math.max(0, Number(bytes) || 0);
+    if (b >= 1e12) return num(b / 1e12, 2) + ' TB';
+    if (b >= 1e9) return num(b / 1e9, 1) + ' GB';
+    if (b >= 1e6) return num(b / 1e6, 0) + ' MB';
+    if (b >= 1e3) return num(b / 1e3, 0) + ' KB';
+    return num(b, 0) + ' B';
+  }
+
+  function formatGb(gb) {
+    var g = Math.max(0, Number(gb) || 0);
+    return g >= 1000 ? num(g / 1024, 1) + ' TB' : num(g, 0) + ' GB';
+  }
+
+  function meter(name, right, pct, sub) {
+    var p = Math.max(0, Math.min(100, Number(pct) || 0));
+    return '<div class="row"><div class="label"><span>' + name + '</span><span>' + right + '</span></div>' +
+           '<div class="bar"><i style="width:' + p + '%"></i></div>' +
+           (sub ? '<div class="meter-sub">' + sub + '</div>' : '') + '</div>';
+  }
+
+  var DRIVE_KIND_KEYS = { nvme: 'driveNvme', ssd: 'driveSsd', hdd: 'driveHdd', flash: 'driveFlash', sd: 'driveSd', network: 'driveNetwork' };
+  var NET_KIND_KEYS = { wifi: 'netWifi', ethernet: 'netEthernet', vpn: 'netVpn' };
+  var THERMAL_KEYS = { nominal: 'thermalNominal', fair: 'thermalFair', serious: 'thermalSerious', critical: 'thermalCritical' };
+
+  function renderSystemCard(t, opt) {
+    var h = '';
+    if (opt.sysInfo !== false) {
+      h += '<div class="sys-info">' + esc(t.model || '') + ' · ' + esc(t.osRelease || '') +
+           (t.cores ? ' (' + t.cores + ' ' + copy('cores') + ')' : '') + '</div>';
+    }
+    if (opt.cpuBar !== false) h += meter(copy('cpu'), percent(t.cpuPct || 0), t.cpuPct || 0);
+    if (opt.ramBar !== false) {
+      h += meter(copy('ram') + ' (' + esc(t.memUsedGb || 0) + ' / ' + esc(t.memTotalGb || 0) + ' GB)', percent(t.memPct || 0), t.memPct || 0);
+    }
+    if (opt.temperature !== false) {
+      var extras = [];
+      if (t.cpuTempMaxC != null && t.cpuTempC != null && t.cpuTempMaxC - t.cpuTempC >= 3) extras.push(copy('peakShort') + ' ' + Math.round(t.cpuTempMaxC) + '°C');
+      if (t.ssdTempC != null) extras.push(copy('ssdTemp') + ' ' + Math.round(t.ssdTempC) + '°C');
+      if (t.batteryTempC != null) extras.push(copy('batteryTemp') + ' ' + Math.round(t.batteryTempC) + '°C');
+      if (t.thermalState && t.thermalState !== 'nominal') extras.push('⚠ ' + copy(THERMAL_KEYS[t.thermalState] || 'thermalNominal'));
+      if (t.cpuTempC != null) {
+        h += meter(copy('temperature') + ' ' + copy('cpuTemp'), Math.round(t.cpuTempC) + '°C', t.cpuTempC, extras.join(' · '));
+      } else if (extras.length || t.thermalState) {
+        var state = t.thermalState ? copy(THERMAL_KEYS[t.thermalState] || 'thermalNominal') : '';
+        h += '<div class="sub" style="font-weight:bold">' + copy('temperature') + ': ' + [state].concat(extras).filter(Boolean).join(' · ') + '</div>';
+      }
+    }
+    if (opt.uptime !== false && t.uptime) {
+      h += '<div class="sys-uptime">' + copy('uptime') + ': ' + esc(t.uptime) + '</div>';
+    }
+    return h;
+  }
+
+  function renderStorageCard(t, opt) {
+    var drives = (t.drives || []).filter(function (d) {
+      return opt.showSystem !== false || !(d.internal && (d.mount === '/' || d.mount === 'C:\\'));
+    });
+    if (drives.length === 0) return '<div class="sub dim">' + copy('noDrives') + '</div>';
+    var max = Number(opt.maxDrives) > 0 ? Number(opt.maxDrives) : 6;
+    var h = '';
+    drives.slice(0, max).forEach(function (d) {
+      var kind = opt.showType !== false ? '<span class="drive-kind">' + copy(DRIVE_KIND_KEYS[d.kind] || 'driveUnknown') + '</span>' : '';
+      var sub = formatGb(d.usedGb) + ' / ' + formatGb(d.totalGb) + (opt.showFree !== false ? ' · ' + formatGb(d.freeGb) + ' ' + copy('free') : '');
+      h += '<div class="drive">' +
+           '<div class="drive-head">' + kind + '<span class="drive-name">' + esc(d.name) + '</span><span class="drive-pct">' + percent(d.pct || 0) + '</span></div>' +
+           '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, d.pct || 0)) + '%"></i></div>' +
+           '<div class="drive-sub">' + sub + '</div>' +
+           '</div>';
+    });
+    if (drives.length > max) h += '<div class="drive-more">+' + (drives.length - max) + ' ' + copy('drives') + '</div>';
+    return h;
+  }
+
+  function renderNetChart(points) {
+    var list = (points || []).slice(-20);
+    if (list.length < 2) return '';
+    var slots = 20;
+    var w = 200;
+    var h = 40;
+    var maxVal = Math.max.apply(null, list) || 1;
+    var slotW = w / slots;
+    var offset = slots - list.length;
+    var bars = list.map(function (v, i) {
+      var bh = v > 0 ? Math.max(2, Math.round((v / maxVal) * (h - 2))) : 1;
+      return '<rect x="' + ((offset + i) * slotW + 1).toFixed(1) + '" y="' + (h - bh) + '" width="' + (slotW - 2).toFixed(1) + '" height="' + bh + '" fill="#000"/>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+           '<line x1="0" y1="' + (h - 0.5) + '" x2="' + w + '" y2="' + (h - 0.5) + '" stroke="#000" stroke-width="1"/>' + bars + '</svg>';
+  }
+
+  function renderNetworkCard(t, opt) {
+    var down = formatRate(t.downloadBps);
+    var h = '<div class="net-hero">' +
+            '<div class="net-label">▼ ' + copy('download') + '</div>' +
+            '<div class="net-big">' + down.value + ' <span class="net-unit">' + down.unit + '</span></div>' +
+            '<div class="net-bytes">' + formatBytes(t.downloadBps) + '/s</div>' +
+            '</div>';
+    if (opt.showUpload !== false) {
+      var up = formatRate(t.uploadBps);
+      h += '<div class="net-up"><span>▲ ' + copy('upload') + '</span><span>' + up.value + ' ' + up.unit + '</span></div>';
+    }
+    if (opt.showChart !== false) {
+      var chart = renderNetChart(t.downloadHistoryBps);
+      if (chart) {
+        var cap = '<span>▼ ' + copy('last10min') + '</span>';
+        if (opt.showPeak !== false) {
+          var pk = formatRate(t.peakDownloadBps);
+          var av = formatRate(t.avgDownloadBps);
+          cap += '<span>' + copy('peak') + ' ' + pk.value + ' ' + pk.unit + ' · ' + copy('average') + ' ' + av.value + ' ' + av.unit + '</span>';
+        }
+        h += '<div class="net-chart">' + chart + '<div class="net-chart-cap">' + cap + '</div></div>';
+      }
+    }
+    var meta = [];
+    if (opt.showInterface !== false) {
+      var kindName = t.portName || copy(NET_KIND_KEYS[t.kind] || 'netOther');
+      meta.push('<strong>' + esc(kindName) + '</strong>' + (t.iface && t.iface !== kindName ? ' (' + esc(t.iface) + ')' : ''));
+      if (t.ipv4) meta.push(esc(t.ipv4));
+      if (t.linkMbps) meta.push(copy('link') + ' ' + (t.linkMbps >= 1000 ? num(t.linkMbps / 1000, 1) + ' Gbps' : t.linkMbps + ' Mbps'));
+    }
+    var lines = meta.length ? meta.join(' · ') : '';
+    if (opt.showTotals !== false && (t.totalRxBytes || t.totalTxBytes)) {
+      lines += (lines ? '<br>' : '') + '▼ ' + formatBytes(t.totalRxBytes) + ' · ▲ ' + formatBytes(t.totalTxBytes) + ' ' + copy('sinceBoot');
+    }
+    if (lines) h += '<div class="net-meta">' + lines + '</div>';
+    return h;
   }
 
   function renderSvgPieChart(items) {
@@ -402,7 +563,8 @@
     var logo = LOGOS[t.tool] || '';
     var opt = Object.assign({}, (window.__CURRENT_OPTIONS__ && window.__CURRENT_OPTIONS__[t.tool]) || {}, (blockCfg && blockCfg.options) || {});
     var extraClass = (blockCfg && blockCfg.width === 'full') ? ' full-width' : '';
-    var h = '<div class="card' + extraClass + '"><h2>' + logo + '<span>' + t.label + '</span></h2>';
+    var title = t.labelKey ? copy(t.labelKey) : t.label;
+    var h = '<div class="card' + extraClass + '"><h2>' + logo + '<span>' + esc(title) + '</span></h2>';
 
     if (t.confidence === 'error' || t.confidence === 'cooldown') {
       var e = t.error || '';
@@ -414,38 +576,9 @@
              '<div class="sub dim">' + msg + '</div></div>';
     }
 
-    if (t.tool === 'macstats') {
-      if (opt.sysInfo !== false) {
-        var meta = [t.model, t.chip, t.osRelease].filter(Boolean).join(' · ');
-        h += '<div class="sub mac-meta">' + esc(meta || 'Mac') + '</div>';
-      }
-      if (opt.disks !== false) {
-        var disks = t.disks || [];
-        if (!disks.length) h += '<div class="sub dim">' + copy('disksNone') + '</div>';
-        disks.forEach(function (d) {
-          var pct = Math.max(0, Math.min(100, Number(d.pct) || 0));
-          h += '<div class="row disk-row"><div class="label"><span>' + esc(d.name) + '</span><span>' +
-               percent(pct) + '</span></div>' +
-               '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
-               '<div class="disk-meta">' + bytes(d.usedBytes) + ' / ' + bytes(d.totalBytes) + ' · ' +
-               bytes(d.freeBytes) + ' ' + copy('diskFree') + '</div></div>';
-        });
-      }
-      var foot = [];
-      var temp = t.temperature;
-      if (opt.temperature !== false && temp) {
-        var parts = [];
-        if (temp.socAvgC != null) {
-          parts.push(copy('tempChip') + ' ' + temp.socAvgC + '°C' +
-                     (temp.socMaxC != null ? ' (' + copy('tempMax') + ' ' + temp.socMaxC + '°C)' : ''));
-        }
-        if (temp.ssdC != null) parts.push(copy('tempSsd') + ' ' + temp.ssdC + '°C');
-        if (parts.length) foot.push('<span>' + parts.join(' · ') + '</span>');
-      }
-      if (opt.uptime !== false && t.uptime) foot.push('<span>' + copy('uptime') + ' ' + esc(t.uptime) + '</span>');
-      if (foot.length) h += '<div class="mac-foot">' + foot.join('') + '</div>';
-      return h + '</div>';
-    }
+    if (t.tool === 'macstats') return h + renderSystemCard(t, opt) + '</div>';
+    if (t.tool === 'storage') return h + renderStorageCard(t, opt) + '</div>';
+    if (t.tool === 'network') return h + renderNetworkCard(t, opt) + '</div>';
 
     if (t.tool === 'omnirouter') {
       var formatNum = function(n) {

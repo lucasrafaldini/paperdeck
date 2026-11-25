@@ -7,6 +7,8 @@ const applemusic = require('./applemusic');
 const antigravity = require('./antigravity');
 const chaosmachine = require('./chaosmachine');
 const macstats = require('./macstats');
+const storage = require('./storage');
+const network = require('./network');
 const tamagotchi = require('./tamagotchi');
 const sitescraper = require('./sitescraper');
 const opencode = require('./opencode');
@@ -20,6 +22,8 @@ const REGISTRY = {
   antigravity,
   chaosmachine,
   macstats,
+  storage,
+  network,
   tamagotchi,
   sitescraper,
   opencode,

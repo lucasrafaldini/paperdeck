@@ -7,6 +7,7 @@
 # PaperDeck 📟
 
 <p align="center">
+  <a href="https://github.com/lucasrafaldini/paperdeck/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/lucasrafaldini/paperdeck/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI" /></a>
   <a href="https://hacktoberfest.com/"><img src="https://img.shields.io/badge/Hacktoberfest-2026-ff7a00?style=for-the-badge&logo=hacktoberfest&logoColor=white" alt="Hacktoberfest 2026" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" /></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D24-brightgreen?style=for-the-badge&logo=node.js" alt="Node.js 24+" /></a>
