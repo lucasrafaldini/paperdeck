@@ -20,6 +20,9 @@ extraResources:
 
 asar: true
 
+# Embute a extensão WidgetKit (macos-widget/) no app do macOS.
+afterSign: scripts/mac-widget-after-sign.js
+
 mac:
   target:
     - target: default
