@@ -24,7 +24,7 @@ PaperDeck v2.1.0 — themes, a Kindle connect wizard, System/Storage/Network wid
 
 ### Changed
 - Users who had the System widget active stop seeing disk usage until they enable **Storage** on the widgets screen.
-- Dependency updates: Electron 42.11.16, Vite 7.3.7, undici, fast-uri, nanoid, js-yaml, @xmldom/xmldom, brace-expansion, baseline-browser-mapping, browserslist; optimized repository images.
+- Dependency updates: Electron 42.11.16, Vite 7.3.8, undici, fast-uri, nanoid, js-yaml, @xmldom/xmldom, brace-expansion, baseline-browser-mapping, browserslist, postcss, tar; optimized repository images.
 
 ## [v2.0.0](https://github.com/lucasrafaldini/paperdeck/releases/tag/v2.0.0) - 2026-09-30
 
