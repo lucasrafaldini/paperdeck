@@ -9,16 +9,21 @@ import type {
   DashboardConfigInput,
   DashboardLayoutConfig,
   DashboardWidgetsConfig,
+  KindleConnectResult,
+  KindleConnectionTarget,
   KindleInstallResult,
   KindleLiveInfo,
+  KindleScanResult,
   KindleScriptStatus,
   KindleStatus,
   LanguagePreference,
   RuntimeInfo,
+  ThemePreference,
   ScheduledNotification,
   WidgetOptionsMap,
 } from '../shared/types'
 import { getAuthStatus, openLogin } from './auth'
+import { kdiscoverModule } from './backend-bridge'
 import { BASE_URL, REPO_URL } from './constants'
 import {
   loadConfig,
@@ -28,9 +33,10 @@ import {
   setLanguage,
   setPictureInPicture,
   setPictureInPictureScale,
+  setTheme,
 } from './config'
 import { currentSystemLanguage } from './i18n'
-import { checkKindle, installKindle, manageKindleScript, uninstallKindle } from './kindle'
+import { checkKindle, connectKindle, installKindle, manageKindleScript, uninstallKindle } from './kindle'
 import { appCommitHash, runtimeOutputPath } from './paths'
 import { applyPipPreference, applyPipScale } from './pip'
 import { getIntervalSeconds, getLastRender, renderDashboard, scheduleRender } from './render'
@@ -85,6 +91,8 @@ export function registerIpc(handlers: IpcHandlers): void {
     return saved
   })
 
+  ipcMain.handle('config:set-theme', (_event, theme: ThemePreference): Promise<DashboardConfig> => setTheme(theme))
+
   ipcMain.handle('config:set-pip', async (_event, enabled: boolean): Promise<DashboardConfig> => {
     const saved = await setPictureInPicture(enabled)
     applyPipPreference(saved.pictureInPicture)
@@ -109,6 +117,15 @@ export function registerIpc(handlers: IpcHandlers): void {
   ipcMain.handle('app:openRepo', () => shell.openExternal(REPO_URL))
 
   ipcMain.handle('kindle:check', (): Promise<KindleStatus> => checkKindle())
+  ipcMain.handle('kindle:scan', async (): Promise<KindleScanResult> => {
+    const config = await loadConfig()
+    return kdiscoverModule().scanForKindles({ port: config.kindlePort || 22 })
+  })
+  ipcMain.handle('kindle:connect', async (_event, target: KindleConnectionTarget): Promise<KindleConnectResult> => {
+    const result = await connectKindle(target)
+    if (result.config) refreshTray()
+    return result
+  })
   ipcMain.handle('kindle:install', async (): Promise<KindleInstallResult> => {
     const result = await installKindle()
     refreshTray()

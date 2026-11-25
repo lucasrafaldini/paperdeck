@@ -20,6 +20,36 @@ const REMOTE = {
   jobTarget: '/etc/upstart/kindle-dashboard.conf',
 };
 
+// Shell helpers shared by install/start/stop/status. Matching the exact loop
+// command line keeps SSH commands that merely mention the script out of it.
+const LOOP_HELPERS = `
+loop_pids() {
+  for proc in /proc/[0-9]*; do
+    cmd=$(tr '\\000' ' ' < "$proc/cmdline" 2>/dev/null)
+    case "$cmd" in
+      "sh ${REMOTE.loop} "|"/bin/sh ${REMOTE.loop} ") echo "\${proc#/proc/}" ;;
+    esac
+  done
+}
+
+stop_all_loops() {
+  touch /mnt/us/dash-loop.stop
+  PIDS=$(loop_pids)
+  if [ -n "$PIDS" ]; then
+    kill $PIDS 2>/dev/null
+    WAIT=5
+    while [ -n "$(loop_pids)" ] && [ "$WAIT" -gt 0 ]; do
+      sleep 1
+      WAIT=$((WAIT - 1))
+    done
+    REMAIN=$(loop_pids)
+    [ -n "$REMAIN" ] && kill -9 $REMAIN 2>/dev/null
+  fi
+  rm -f /mnt/us/dash-loop.pid
+  return 0
+}
+`;
+
 function positiveInt(value, fallback) {
   const parsed = Number.parseInt(value || '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -115,6 +145,8 @@ mntroot ro >/dev/null 2>&1 || true
 
 initctl reload-configuration
 rm -f ${shellQuote(REMOTE.disabled)}
+${LOOP_HELPERS}
+stop_all_loops
 stop ${JOB_NAME} >/dev/null 2>&1 || true
 start ${JOB_NAME} >/dev/null
 `;
@@ -122,8 +154,13 @@ start ${JOB_NAME} >/dev/null
   await new Promise((resolve) => setTimeout(resolve, 3000));
 }
 
-async function start(client) {
+// Starting always rewrites the environment so the Kindle picks up the current
+// dashboard URL (e.g. after this computer got a new IP).
+async function start(client, env = process.env) {
+  await writeEnvironment(client, env);
   await run(client, `
+${LOOP_HELPERS}
+stop_all_loops
 rm -f ${shellQuote(REMOTE.disabled)}
 /bin/sh ${shellQuote(REMOTE.launcher)}
 `, 'start dashboard');
@@ -132,23 +169,8 @@ rm -f ${shellQuote(REMOTE.disabled)}
 async function stop(client) {
   await run(client, `
 touch ${shellQuote(REMOTE.disabled)}
-touch /mnt/us/dash-loop.stop
-PID=$(cat /mnt/us/dash-loop.pid 2>/dev/null)
-if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
-  kill "$PID" 2>/dev/null || true
-  WAIT=5
-  while kill -0 "$PID" 2>/dev/null && [ "$WAIT" -gt 0 ]; do
-    sleep 1
-    WAIT=$((WAIT - 1))
-  done
-  if kill -0 "$PID" 2>/dev/null; then
-    kill -9 "$PID" 2>/dev/null || true
-  fi
-  CURRENT=$(cat /mnt/us/dash-loop.pid 2>/dev/null)
-  if [ "$CURRENT" = "$PID" ]; then
-    rm -f /mnt/us/dash-loop.pid
-  fi
-fi
+${LOOP_HELPERS}
+stop_all_loops
 `, 'stop dashboard');
 }
 
@@ -181,13 +203,17 @@ else
   echo 'Enabled   : n/a'
 fi
 echo "Upstart   : $(initctl status ${JOB_NAME} 2>/dev/null || echo unavailable)"
-PID=$(cat /mnt/us/dash-loop.pid 2>/dev/null)
-if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
-  echo "Loop      : running (pid $PID)"
+${LOOP_HELPERS}
+PIDS=$(loop_pids)
+COUNT=$(echo "$PIDS" | grep -c .)
+if [ "$COUNT" -gt 0 ]; then
+  echo "Loop      : running (pid $(echo $PIDS))"
 else
   echo 'Loop      : stopped'
 fi
+echo "Loops     : $COUNT"
 BACKEND_URL=$(sed -n "s/^PC=['\\"]\\{0,1\\}\\([^'\\"]*\\).*/\\1/p" ${shellQuote(REMOTE.environment)} 2>/dev/null)
+echo "URL       : \${BACKEND_URL:-missing}"
 if [ -n "$BACKEND_URL" ]; then
   PING_URL=$(echo "$BACKEND_URL" | sed 's|/dash.png.*$|/api/ping|')
   if curl -fsS --connect-timeout 3 --max-time 5 "$PING_URL" >/dev/null 2>&1; then
@@ -230,7 +256,7 @@ async function runAction(action, options = {}) {
   const client = await connect(options.ssh);
   try {
     if (action === 'install') await install(client, options.env || process.env);
-    else if (action === 'start') await start(client);
+    else if (action === 'start') await start(client, options.env || process.env);
     else if (action === 'stop') await stop(client);
     else if (action === 'uninstall') await uninstall(client);
 
@@ -273,6 +299,8 @@ module.exports = {
   positiveInt,
   preflight,
   runAction,
+  start,
   status,
+  stop,
   uninstall,
 };

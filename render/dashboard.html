@@ -75,6 +75,24 @@
   html.kt3 .stat-box { border: 2px solid #000; padding: 6px 8px; text-align: center; }
   html.kt3 .stat-val { font-size: 18px; font-weight: bold; }
   html.kt3 .stat-lbl { font-size: 11px; opacity: 0.8; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
+  /* Cards are size containers so stat grids adapt to any column width. */
+  html.kt3 .card { container-type: inline-size; }
+  html.kt3 .stat-val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html.kt3 .card h2 > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @container (max-width: 300px) {
+    html.kt3 .stat-grid,
+    html.kt3 .col-stacked .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  }
+  /* Five columns leave ~185px per card: shrink stats instead of breaking words. */
+  @container (max-width: 220px) {
+    html.kt3 .card h2 { font-size: 17px; }
+    html.kt3 .stat-box { padding: 4px 3px; }
+    html.kt3 .stat-val { font-size: 15px; }
+    html.kt3 .stat-lbl { font-size: 9px; letter-spacing: -0.02em; }
+  }
+  html.kt3 .card-meta { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; }
+  html.kt3 .card-meta-name { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  html.kt3 .card-meta-status { flex: 0 0 auto; font-size: 12px; font-weight: bold; white-space: nowrap; }
   html.kt3 .model-list { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
   html.kt3 .model-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 3px 0; border-bottom: 1px dotted #666; }
   html.kt3 .model-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
@@ -326,6 +344,17 @@
            '<div class="sub dim">! ' + copy('codexStale') + '</div></div>';
   }
 
+  // Model ids can be full cache paths, e.g.
+  // "local-mlx//Volumes/X/hf_cache/models--org--Qwen3-27B/snapshots/<sha>/2-bit".
+  // Show "Qwen3-27B · 2-bit" instead of the path (which also leaks local dirs).
+  function modelLabel(raw) {
+    var value = String(raw || '').trim();
+    var hf = value.match(/models--[^/]+?--([^/]+)(?:\/snapshots\/[0-9a-f]+\/?([^/]*))?/i);
+    if (hf) return hf[1] + (hf[2] ? ' · ' + hf[2] : '');
+    var parts = value.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : value;
+  }
+
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -526,7 +555,7 @@
     }).join('');
     return '<div style="margin:6px 0 10px">' +
            '<div style="font-size:11px;font-weight:bold;margin-bottom:3px">' + (title || 'Histórico 7 dias') + ':</div>' +
-           '<svg width="' + w + '" height="' + (h + 14) + '" viewBox="0 0 ' + w + ' ' + (h + 14) + '">' + bars + '</svg>' +
+           '<svg style="display:block;width:100%;max-width:' + w + 'px;height:auto" viewBox="0 0 ' + w + ' ' + (h + 14) + '">' + bars + '</svg>' +
            '</div>';
   }
 
@@ -701,11 +730,11 @@
 
     if (t.tool === 'opencode') {
       var statusBadge = t.status === 'Ativo' ? '● Ativo' : '○ Ocioso';
-      var modelName = t.model || 'Ollama Local';
+      var modelName = modelLabel(t.model) || 'Ollama Local';
       if (opt.modelInfo !== false) {
-        h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 6px">' +
-             '<span style="font-size:13px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px">🤖 ' + modelName + '</span>' +
-             '<span style="font-size:12px;opacity:0.8">' + statusBadge + '</span>' +
+        h += '<div class="card-meta">' +
+             '<span class="card-meta-name">' + esc(modelName) + '</span>' +
+             '<span class="card-meta-status">' + statusBadge + '</span>' +
              '</div>';
       }
 
@@ -727,7 +756,7 @@
 
       if (opt.activeSession !== false && t.activeSession) {
         h += '<div style="margin:4px 0 6px;padding:4px 8px;border:1.5px solid #000;border-radius:5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-             '<strong>Última Sessão:</strong> ' + t.activeSession + '</div>';
+             '<strong>Última Sessão:</strong> ' + esc(t.activeSession) + '</div>';
       }
 
       if (opt.historyChart !== false && Array.isArray(t.historyPoints)) {

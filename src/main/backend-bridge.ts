@@ -1,7 +1,7 @@
 import type { Server } from 'node:http'
 import { join } from 'node:path'
 import { app } from 'electron'
-import type { AuthSourceStatus, KindleScriptStatus } from '../shared/types'
+import type { AuthSourceStatus, KindleScanResult, KindleScriptStatus } from '../shared/types'
 import { BASE_URL, PORT } from './constants'
 import { runtimeOutputPath } from './paths'
 
@@ -32,12 +32,23 @@ export interface SshOptions {
   host: string
   password?: string
   port: number
+  readyTimeout?: number
+  retries?: number
   username: string
 }
 
 export interface KsshModule {
   connect: (options?: SshOptions) => Promise<SshClient>
   execCommand: (client: SshClient, command: string) => Promise<SshExecResult>
+}
+
+export interface KdiscoverModule {
+  scanForKindles: (options?: {
+    port?: number
+    concurrency?: number
+    connectTimeout?: number
+    bannerTimeout?: number
+  }) => Promise<KindleScanResult>
 }
 
 export interface KindleAutostartModule {
@@ -68,6 +79,10 @@ export function ksshModule(): KsshModule {
 
 export function kindleAutostartModule(): KindleAutostartModule {
   return loadModule<KindleAutostartModule>('scripts', 'kindle-autostart.js')
+}
+
+export function kdiscoverModule(): KdiscoverModule {
+  return loadModule<KdiscoverModule>('scripts', 'kdiscover.js')
 }
 
 async function pingBackend(): Promise<boolean> {

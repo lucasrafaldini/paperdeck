@@ -4,7 +4,17 @@ import { ExecPill, ReqChip } from '../components/StatusChips'
 import type { Translator } from '../i18n'
 import { dashboardHostFromUrl, dashboardUrlWithHost, formatTime } from '../lib/format'
 import type { ConfigForm, KindleScriptAction, KindleTab } from '../types'
-import type { DashboardConfig, KindleDevice, KindleLiveInfo, KindleScriptStatus, KindleStatus } from '../../../shared/types'
+import type {
+  DashboardConfig,
+  KindleConnectResult,
+  KindleConnectionTarget,
+  KindleDevice,
+  KindleLiveInfo,
+  KindleScanResult,
+  KindleScriptStatus,
+  KindleStatus,
+} from '../../../shared/types'
+import { ConnectWizard } from './ConnectWizard'
 
 interface KindleViewProps {
   checkingKindle: boolean
@@ -20,9 +30,11 @@ interface KindleViewProps {
   kindleTab: KindleTab
   onAddDevice: (device: { name: string; ip: string; port: number; user: string }) => Promise<void>
   onCheckKindle: () => void
+  onConnect: (target: KindleConnectionTarget) => Promise<KindleConnectResult>
   onInstall: () => void
   onKindleTab: (tab: KindleTab) => void
   onRemoveDevice: (id: string) => Promise<void>
+  onScanNetwork: () => Promise<KindleScanResult>
   onScript: (action: KindleScriptAction) => void
   onSelectDevice: (id: string) => Promise<void>
   onSubmitConfig: () => void
@@ -48,9 +60,11 @@ export function KindleView({
   kindleTab,
   onAddDevice,
   onCheckKindle,
+  onConnect,
   onInstall,
   onKindleTab,
   onRemoveDevice,
+  onScanNetwork,
   onScript,
   onSelectDevice,
   onSubmitConfig,
@@ -134,7 +148,16 @@ export function KindleView({
 
       {kindleTab === 'dispositivos' ? (
         <section className="kindle-devices-view">
-          <div className="panel devices-intro-banner">
+          <ConnectWizard
+            busy={busy}
+            defaultUser={config?.kindleUser || 'root'}
+            onConnect={onConnect}
+            onGoInstall={() => onKindleTab('diagnostico')}
+            onScan={onScanNetwork}
+            t={t}
+          />
+
+          <div className="section-heading">
             <div>
               <p className="eyebrow">{t('kindleDevicesTab')}</p>
               <h2>{t('kindleDevicesTitle')}</h2>
@@ -206,56 +229,52 @@ export function KindleView({
             })}
           </div>
 
-          <form className="panel add-device-form" onSubmit={(e) => void handleAddSubmit(e)}>
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">{t('kindleDevicesTab')}</p>
-                <h3>+ {t('addKindle')}</h3>
+          <details className="panel manual-add">
+            <summary>{t('manualAddTitle')}</summary>
+            <form className="add-device-form" onSubmit={(e) => void handleAddSubmit(e)}>
+              <div className="field-grid">
+                <label>
+                  <span>{t('deviceName')}</span>
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder={t('deviceNamePlaceholder')}
+                  />
+                </label>
+                <label>
+                  <span>{t('fieldKindleIp')}</span>
+                  <input
+                    value={newIp}
+                    onChange={(e) => setNewIp(e.target.value)}
+                    placeholder="192.168.0.x"
+                    required
+                  />
+                </label>
+                <label>
+                  <span>{t('fieldPort')}</span>
+                  <input
+                    value={newPort}
+                    onChange={(e) => setNewPort(e.target.value)}
+                    inputMode="numeric"
+                  />
+                </label>
+                <label>
+                  <span>{t('fieldUser')}</span>
+                  <input
+                    value={newUser}
+                    onChange={(e) => setNewUser(e.target.value)}
+                    placeholder="root"
+                  />
+                </label>
               </div>
-            </div>
 
-            <div className="field-grid">
-              <label>
-                <span>{t('deviceName')}</span>
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder={t('deviceNamePlaceholder')}
-                />
-              </label>
-              <label>
-                <span>{t('fieldKindleIp')}</span>
-                <input
-                  value={newIp}
-                  onChange={(e) => setNewIp(e.target.value)}
-                  placeholder="192.168.0.x"
-                  required
-                />
-              </label>
-              <label>
-                <span>{t('fieldPort')}</span>
-                <input
-                  value={newPort}
-                  onChange={(e) => setNewPort(e.target.value)}
-                  inputMode="numeric"
-                />
-              </label>
-              <label>
-                <span>{t('fieldUser')}</span>
-                <input
-                  value={newUser}
-                  onChange={(e) => setNewUser(e.target.value)}
-                  placeholder="root"
-                />
-              </label>
-            </div>
-
-            <div className="button-row">
-              <ActionButton type="submit" icon="plus" disabled={busy || addingDevice || !newIp.trim()}>
-                {addingDevice ? t('addingKindle') : t('addKindle')}
-              </ActionButton>
-            </div>
-          </form>
+              <div className="button-row">
+                <ActionButton type="submit" icon="plus" disabled={busy || addingDevice || !newIp.trim()}>
+                  {addingDevice ? t('addingKindle') : t('addKindle')}
+                </ActionButton>
+              </div>
+            </form>
+          </details>
         </section>
       ) : null}
 

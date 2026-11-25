@@ -1,7 +1,7 @@
 import { app, Menu, Notification } from 'electron'
 import { getAuthStatus } from './auth'
 import { startBackend, stopBackend } from './backend-bridge'
-import { loadConfig } from './config'
+import { loadConfig, refreshDashboardHost } from './config'
 import { applyLanguagePreference, loadLocales, text } from './i18n'
 import { registerIpc } from './ipc'
 import { applyPipPreference, destroyPipWindow } from './pip'
@@ -77,6 +77,8 @@ if (!hasLock) {
     Menu.setApplicationMenu(null)
 
     loadLocales()
+    const healedUrl = await refreshDashboardHost().catch(() => null)
+    if (healedUrl) console.log(`[paperdeck] dashboard URL updated after IP change: ${healedUrl}`)
     const config = await loadConfig()
     applyLanguagePreference(config.language)
 
@@ -115,6 +117,8 @@ if (!hasLock) {
     }
     void pollKindleStatus()
     setInterval(() => void pollKindleStatus(), 8000)
+    // DHCP can hand this Mac a new IP while the app is open.
+    setInterval(() => void refreshDashboardHost().catch(() => null), 60_000)
 
     await renderDashboard()
     applyPipPreference(config.pictureInPicture)

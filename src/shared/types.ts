@@ -4,6 +4,11 @@ export type SupportedLanguage = string
 
 export type LanguagePreference = SupportedLanguage | 'system'
 
+// Visual themes for the control panel (never the e-ink render).
+export const THEME_IDS = ['midnight', 'daylight', 'glass', 'solar', 'solar-night', 'nord', 'paper'] as const
+export type ThemeId = (typeof THEME_IDS)[number]
+export type ThemePreference = ThemeId | 'system'
+
 export interface RuntimeInfo {
   appCommit: string
   appVersion: string
@@ -47,6 +52,7 @@ export interface DashboardConfig {
   pictureInPicture: boolean
   pictureInPictureScale: number
   setupComplete: boolean
+  theme: ThemePreference
   kindleDevices?: KindleDevice[]
   activeKindleId?: string
 }
@@ -94,6 +100,36 @@ export interface KindleStatus {
   mntroot: boolean
   mntus: boolean
   model: string | null
+}
+
+export interface KindleCandidate {
+  ip: string
+  port: number
+  hostname: string | null
+  banner: string | null
+  likelyKindle: boolean
+}
+
+export interface KindleScanResult {
+  scannedAt: string
+  subnets: string[]
+  candidates: KindleCandidate[]
+  error?: string
+}
+
+export interface KindleConnectionTarget {
+  ip: string
+  port: number
+  user: string
+  name?: string
+  // Optional: empty means "reuse the saved password / SSH key".
+  password?: string
+}
+
+export interface KindleConnectResult {
+  status: KindleStatus
+  // Present only when the SSH check succeeded and the device was saved.
+  config: DashboardConfig | null
 }
 
 export interface KindleScriptStatus {
@@ -176,6 +212,9 @@ export interface KindleLiveInfo {
 export interface DashboardApi {
   checkAuth: () => Promise<AuthStatus>
   checkKindle: () => Promise<KindleStatus>
+  scanKindles: () => Promise<KindleScanResult>
+  connectKindle: (target: KindleConnectionTarget) => Promise<KindleConnectResult>
+  setTheme: (theme: ThemePreference) => Promise<DashboardConfig>
   getKindleScriptStatus: () => Promise<KindleScriptStatus>
   getRuntimeInfo: () => Promise<RuntimeInfo>
   getConfig: () => Promise<DashboardConfig>

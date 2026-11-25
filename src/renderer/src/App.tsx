@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createTranslator } from './i18n'
+import { applyTheme, watchSystemTheme } from './theme'
 import { formFromConfig, inputFromForm, resolveLanguage } from './lib/format'
 import type {
   BackendState,
@@ -26,9 +27,12 @@ import type {
   KindleLiveInfo,
   KindleScriptStatus,
   KindleStatus,
+  KindleConnectResult,
+  KindleConnectionTarget,
   LanguagePreference,
   RenderResult,
   RuntimeInfo,
+  ThemePreference,
 } from '../../shared/types'
 
 export default function App(): React.JSX.Element {
@@ -59,6 +63,16 @@ export default function App(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [noticeNav, setNoticeNav] = useState<NavKey | null>(null)
   const [installOutput, setInstallOutput] = useState<string | null>(null)
+
+  const themePreference: ThemePreference = config?.theme ?? 'midnight'
+
+  const hasConfig = config !== null
+
+  useEffect(() => {
+    if (!hasConfig) return undefined
+    applyTheme(themePreference)
+    return watchSystemTheme(themePreference)
+  }, [hasConfig, themePreference])
 
   const configured = config?.setupComplete === true
   const activeLanguage = resolveLanguage(config?.language, runtime?.systemLanguage)
@@ -358,6 +372,35 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  async function handleChangeTheme(theme: ThemePreference): Promise<void> {
+    // Apply instantly; persisting can lag behind the click.
+    applyTheme(theme)
+    setConfig((current) => current ? { ...current, theme } : current)
+    clearNotice('configuracoes')
+    try {
+      const saved = await window.dashboard.setTheme(theme)
+      setConfig(saved)
+    } catch (themeError) {
+      showError('configuracoes', themeError instanceof Error ? themeError.message : String(themeError))
+    }
+  }
+
+  async function handleConnectKindle(target: KindleConnectionTarget): Promise<KindleConnectResult> {
+    const result = await window.dashboard.connectKindle(target)
+    setKindle(result.status)
+    if (result.config) {
+      setConfig(result.config)
+      setForm(formFromConfig(result.config))
+      window.dashboard.getKindleScriptStatus()
+        .then((scriptStatus) => {
+          setKindleScript(scriptStatus)
+          setInstallOutput(scriptStatus.output)
+        })
+        .catch(() => {})
+    }
+    return result
+  }
+
   async function handleSaveDashboardTitle(title: string): Promise<void> {
     setSavingTitle(true)
     clearNotice('configuracoes')
@@ -589,6 +632,7 @@ export default function App(): React.JSX.Element {
               languagePreference={config?.language ?? 'system'}
               onChangeDashboardTitle={(title) => void handleSaveDashboardTitle(title)}
               onChangeLanguage={(language) => void handleSaveLanguage(language)}
+              onChangeTheme={(theme) => void handleChangeTheme(theme)}
               onChangePictureInPictureScale={(scale) => void handleChangePipScale(scale)}
               onTogglePictureInPicture={(enabled) => void handleTogglePictureInPicture(enabled)}
               pictureInPicture={config?.pictureInPicture ?? false}
@@ -599,6 +643,7 @@ export default function App(): React.JSX.Element {
               savingTitle={savingTitle}
               systemLanguage={runtime?.systemLanguage}
               t={t}
+              themePreference={themePreference}
             />
           ) : null}
 
@@ -617,9 +662,11 @@ export default function App(): React.JSX.Element {
               kindleTab={kindleTab}
               onAddDevice={(device) => handleAddKindleDevice(device)}
               onCheckKindle={() => void handleCheckKindle()}
+              onConnect={(target) => handleConnectKindle(target)}
               onInstall={() => void handleInstallKindle()}
               onKindleTab={setKindleTab}
               onRemoveDevice={(id) => handleRemoveKindleDevice(id)}
+              onScanNetwork={() => window.dashboard.scanKindles()}
               onScript={(action) => void handleKindleScript(action)}
               onSelectDevice={(id) => handleSelectKindleDevice(id)}
               onSubmitConfig={() => void saveCurrentConfig()}

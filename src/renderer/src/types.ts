@@ -5,6 +5,10 @@ export type KindleScriptAction = 'start' | 'stop'
 
 export type IconName =
   | 'book'
+  | 'wifi'
+  | 'palette'
+  | 'plug'
+  | 'arrow-left'
   | 'kindle'
   | 'login'
   | 'refresh'
