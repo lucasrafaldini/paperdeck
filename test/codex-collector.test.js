@@ -138,15 +138,20 @@ test('codex collector prefers live rate limits over stale fallback', async () =>
   const nowSeconds = Math.floor(Date.now() / 1000);
 
   try {
-    writeRollout(homeDir, path.join('archived_sessions', 'rollout-stale.jsonl'), [
+    const stale = writeRollout(homeDir, path.join('archived_sessions', 'rollout-stale.jsonl'), [
       tokenCountEvent(120000, nowSeconds - 3600, nowSeconds + 86400, 90),
     ]);
-    writeRollout(homeDir, path.join('archived_sessions', 'rollout-live.jsonl'), [
+    const live = writeRollout(homeDir, path.join('archived_sessions', 'rollout-live.jsonl'), [
       tokenCountEvent(110000, nowSeconds + 3600, nowSeconds + 86400 * 3, 6),
     ]);
-    writeRollout(homeDir, path.join('sessions', '2026', '06', '18', 'rollout-current.jsonl'), [
+    const current = writeRollout(homeDir, path.join('sessions', '2026', '06', '18', 'rollout-current.jsonl'), [
       { payload: { type: 'token_count', info: { total_token_usage: { total_tokens: 140748 } } } },
     ]);
+    // Rollouts are read newest-first by mtime; files written back to back can
+    // share a timestamp (notably on Windows), so pin the order explicitly.
+    fs.utimesSync(stale, new Date(Date.now() - 20000), new Date(Date.now() - 20000));
+    fs.utimesSync(live, new Date(Date.now() - 10000), new Date(Date.now() - 10000));
+    fs.utimesSync(current, new Date(), new Date());
 
     const collector = loadCollectorForHome(homeDir);
     const result = await collector.collect();
